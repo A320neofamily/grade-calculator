@@ -1,0 +1,10 @@
+{
+  "description": "Effortlessly calculate raw scores for each subject by entering test scores into this user-friendly app, designed for educators and students.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
