@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import VisitorStats from "./VisitorStats";
 
 type Assessment = {
   id: string;
@@ -1082,6 +1083,9 @@ export default function App() {
               <Icon name="arrow" className="size-5" />
             </button>
           </form>
+        <div style={{textAlign: "center", marginTop: "8px"}}>
+          <VisitorStats />
+        </div>
         </main>
       </div>
     );
