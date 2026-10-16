@@ -59,9 +59,9 @@ export default function VisitorStats() {
 
   return (
     <span className="visitor-stats">
-      <span>오늘 방문자 {format(stats?.today ?? 0)}명</span>
+      <span>오늘 조회 {format(stats?.today ?? 0)}회/span>
       {" · "}
-      <span>누적 방문자 {format(stats?.total ?? 0)}명</span>
+      <span>누적 조회 {format(stats?.total ?? 0)}회</span>
     </span>
   )
 }
