@@ -87,6 +87,7 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
   }
 
   const title = config.title ?? "원점수 계산기 by dohoon"
+  const favicon = config.favicon ?? "/public/favicon.svg";
   const description = config.description ?? ''
   // Imported HTML keeps its own favicon; new Makes default to the Make product 
   const socialImage = config.openGraph?.image ?? ''
