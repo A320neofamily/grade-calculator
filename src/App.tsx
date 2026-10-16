@@ -109,7 +109,7 @@ const mandukSubjects: Subject[] = [
     name: "체육",
     color: "bg-cyan-500",
     assessments: [
-      { id: "basketball1", type: "수행평가", title: "농구", period: "9월", weight: 30 },
+      { id: "basketball1", type: "수행평가", title: "탁구", period: "9월", weight: 30 },
       { id: "volleyball1", type: "수행평가", title: "배구 Ⅰ", period: "11월", weight: 30 },
       { id: "volleyball2", type: "수행평가", title: "배구 Ⅱ", period: "11~12월", weight: 40 },
     ],
