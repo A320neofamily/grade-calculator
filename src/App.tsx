@@ -1030,8 +1030,10 @@ export default function App() {
             <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-xl shadow-indigo-950">
               <Icon name="book" className="size-7" />
             </div>
-            <p className="mb-2 text-xs font-bold tracking-[0.18em] text-indigo-300">만덕중2 김도훈이 만들었어요</p>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">학교를 선택해 주세요</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              원점수 계산기 by dohoon
+            </p>
+            <h1 className="text-3xl font-black tracking-tight sm:text-4xl mt-2">학교를 선택해 주세요</h1>
             <p className="mt-3 text-sm leading-6 text-slate-400">
               학교별 평가계획에 맞춰 수행평가와 지필평가 원점수를 계산합니다.
             </p>
@@ -1101,7 +1103,7 @@ export default function App() {
             </div>
             <div>
               <p className="text-[11px] font-bold tracking-[0.16em] text-indigo-600">
-                {activeSchool.shortName} · 2학기 평가
+                {activeSchool.shortName} · 원점수 계산기 by dohoon
               </p>
               <p className="text-lg font-extrabold tracking-tight">원점수 계산기</p>
             </div>
