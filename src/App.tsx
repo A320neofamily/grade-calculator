@@ -996,7 +996,7 @@ export default function App() {
     const target = targets.find((item) => roundedMaximumScore >= item.threshold) || targets[targets.length - 1];
     const minimumRawScore = target.threshold === 0 ? 0 : target.threshold - 0.5;
     const exactMinimum = (minimumRawScore - activeResult.score) / (remaining.weight / 100);
-    const minimumScore = Math.min(100, Math.max(0, Math.round(exactMinimum)));
+    const minimumScore = Math.min(100, Math.max(0, Math.ceil(exactMinimum)));
 
     return { remaining, grade: target.grade, minimumScore };
   })();
