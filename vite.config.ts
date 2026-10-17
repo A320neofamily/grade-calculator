@@ -1,4 +1,5 @@
 import { defineConfig, type HtmlTagDescriptor, type Plugin } from 'vite'
+import { VitePWA } from 'vite-plugin-pwa'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
@@ -18,12 +19,50 @@ export default defineConfig(({ mode }) => {
       minify: !emitSourcemaps,
     },
     plugins: [
-react(),
+      react(),
       tailwindcss(),
       figmaSiteConfiguration(siteConfiguration),
       figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
       figmaMakeKitPlugin({ storiesGlob: '/src/**/*.stories.{ts,tsx,js,jsx}' }),
+      VitePWA({
+        registerType: 'autoUpdate',
+
+        includeAssets: [
+          'favicon.svg',
+          'pwa-192.png',
+          'pwa-512.png'
+        ],
+
+        manifest: {
+          name: '원점수 계산기 by dohoon',
+          short_name: '원점수 계산기 by dohoon',
+          description: '자동으로 원점수를 계산합니다',
+          theme_color: '#ffffff',
+          background_color: '#ffffff',
+          display: 'standalone',
+          start_url: './',
+          scope: './',
+          icons: [
+            {
+              src: 'pwa-192.png',
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: 'pwa-512.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ]
+        },
+
+        workbox: {
+          globPatterns: [
+            '**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'
+          ]
+        }
+      })
     ],
     resolve: {
       alias: {
@@ -87,7 +126,6 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
   }
 
   const title = config.title ?? "원점수 계산기 by dohoon"
-  const favicon = config.favicon ?? "/public/favicon.svg";
   const description = config.description ?? ''
   // Imported HTML keeps its own favicon; new Makes default to the Make product 
   const socialImage = config.openGraph?.image ?? ''
@@ -135,9 +173,6 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
         }
         if (config.robots?.index === false) {
           tags.push({ tag: 'meta', attrs: { name: 'robots', content: 'noindex, nofollow' }, injectTo: 'head' })
-        }
-        if (favicon) {
-          tags.push({ tag: 'link', attrs: { rel: 'icon', href: favicon }, injectTo: 'head' })
         }
         if (title) {
           tags.push({ tag: 'meta', attrs: { property: 'og:title', content: title }, injectTo: 'head' })
