@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-const format = (value: number) => value.toLocaleString();
+import "./VisitorStats.css"
 
 const API_URL =
   "https://grade-calculator-stats.grade-calculator.workers.dev";
@@ -37,10 +37,23 @@ export default function VisitorStats() {
   }, []);
 
   return (
-    <span className="visitor-stats">
-      <span>오늘 조회 {format(stats?.today ?? 0)}회</span>
-      {" · "}
-      <span>누적 조회 {format(stats?.total ?? 0)}회</span>
-    </span>
+    <div
+      style={{
+        textAlign: "center",
+        fontSize: "13px",
+        color: "#777",
+        marginTop: "12px",
+      }}
+    >
+      {stats ? (
+        <>
+          오늘 조회 {stats.today.toLocaleString()}회
+          {" · "}
+          누적 조회 {stats.total.toLocaleString()}회
+        </>
+      ) : (
+        "조회 통계를 불러오는 중..."
+      )}
+    </div>
   );
 }
