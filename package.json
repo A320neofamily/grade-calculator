@@ -1,7 +1,7 @@
 {
-  "name": "figma-make-app",
+  "name": "grade-calculator",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
