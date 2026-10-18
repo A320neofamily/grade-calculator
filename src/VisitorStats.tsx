@@ -37,12 +37,12 @@ export default function VisitorStats() {
   }, []);
 
   return (
-    <div className="visitor-stats">
+    <div>
       {stats ? (
         <>
-          <span>오늘 조회 {stats.today.toLocaleString()}회</span>
+          <span className="visitor-stats">오늘 조회 {stats.today.toLocaleString()}회</span>
           <span className="visitor-stats-separator"> · </span>
-          <span>누적 조회 {stats.total.toLocaleString()}회</span>
+          <span className="visitor-stats">누적 조회 {stats.total.toLocaleString()}회</span>
         </>
       ) : (
         "조회 통계를 불러오는 중..."
