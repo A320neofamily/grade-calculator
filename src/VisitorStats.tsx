@@ -44,7 +44,7 @@ export default function VisitorStats() {
       {stats ? (
         <>
           <span className="visitor-stats>오늘 조회 {stats.today.toLocaleString()}회</span>
-            {" · "}
+            {" "}<span>·</span>{" "}
           <span className="visitor-stats>누적 조회 {stats.total.toLocaleString()}회</span>
         </>
       ) : (
