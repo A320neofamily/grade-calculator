@@ -1103,7 +1103,7 @@ export default function App() {
             </div>
             <div>
               <p className="text-[11px] font-bold tracking-[0.16em] text-indigo-600">
-                {activeSchool.shortName} · 원점수 계산기 by dohoon
+                {activeSchool.shortName} · 2-2 평가계획
               </p>
               <p className="text-lg font-extrabold tracking-tight">원점수 계산기</p>
             </div>
