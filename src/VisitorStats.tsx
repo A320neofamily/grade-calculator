@@ -28,9 +28,6 @@ export default function VisitorStats() {
     };
 
     loadStats();
-    fetch(`${API_URL}/track`).catch((error) => {
-      console.error("조회 기록 저장 실패:", error);
-    });
     const timer = window.setInterval(loadStats, 30000);
 
     return () => {
@@ -43,9 +40,9 @@ export default function VisitorStats() {
     <div className="visitor-stats">
       {stats ? (
         <>
-          <span className="visitor-stats>오늘 조회 {stats.today.toLocaleString()}회</span>
-            {" "}<span>·</span>{" "}
-          <span className="visitor-stats>누적 조회 {stats.total.toLocaleString()}회</span>
+          <span>오늘 조회 {stats.today.toLocaleString()}회</span>
+          <span className="visitor-stats-separator"> · </span>
+          <span>누적 조회 {stats.total.toLocaleString()}회</span>
         </>
       ) : (
         "조회 통계를 불러오는 중..."
