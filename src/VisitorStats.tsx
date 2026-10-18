@@ -9,6 +9,8 @@ type Stats = {
   total: number;
 };
 
+const format = (value: number) => value.toLocaleString();
+
 export default function VisitorStats() {
   const [stats, setStats] = useState<Stats | null>(null);
 
@@ -18,16 +20,33 @@ export default function VisitorStats() {
     const loadStats = async () => {
       try {
         const response = await fetch(`${API_URL}/stats`);
-        if (!response.ok) throw new Error("통계 조회 실패");
+
+        if (!response.ok) {
+          throw new Error("통계 조회 실패");
+        }
 
         const data: Stats = await response.json();
-        if (active) setStats(data);
+
+        if (active) {
+          setStats(data);
+        }
       } catch (error) {
         console.error("통계 로드 실패:", error);
       }
     };
 
-    loadStats();
+    const trackAndLoad = async () => {
+      try {
+        await fetch(`${API_URL}/track`);
+      } catch (error) {
+        console.error("조회 기록 저장 실패:", error);
+      }
+
+      await loadStats();
+    };
+
+    trackAndLoad();
+
     const timer = window.setInterval(loadStats, 30000);
 
     return () => {
@@ -37,23 +56,10 @@ export default function VisitorStats() {
   }, []);
 
   return (
-    <div
-      style={{
-        textAlign: "center",
-        fontSize: "13px",
-        color: "#777",
-        marginTop: "12px",
-      }}
-    >
-      {stats ? (
-        <>
-          오늘 조회 {stats.today.toLocaleString()}회
-          {" · "}
-          누적 조회 {stats.total.toLocaleString()}회
-        </>
-      ) : (
-        "조회 통계를 불러오는 중..."
-      )}
-    </div>
+    <span className="visitor-stats">
+      <span>오늘 조회 {format(stats?.today ?? 0)}회</span>
+      {" · "}
+      <span>누적 조회 {format(stats?.total ?? 0)}회</span>
+    </span>
   );
 }
