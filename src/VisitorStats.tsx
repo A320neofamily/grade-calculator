@@ -1,67 +1,55 @@
-import { useEffect, useState } from "react"
-import "./VisitorStats.css"
 
-type VisitorStatsData = {
-  today: number
-  total: number
-  updatedAt?: string
-}
+import { useEffect, useState } from "react";
 
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbyEiYrkmtPt-jryyXDEoKeqlOy5sLXqkXf0bBDlPtnwRuOXvxWhKKm4hbb5PnNbekfNYA/exec"
+  "https://grade-calculator-stats.grade-calculator.workers.dev";
+
+type Stats = {
+  today: number;
+  total: number;
+};
 
 export default function VisitorStats() {
-  const [stats, setStats] = useState<VisitorStatsData | null>(null)
-  const [error, setError] = useState(false)
+  const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    let cancelled = false
+    let active = true;
 
-    async function loadStats() {
+    const loadStats = async () => {
       try {
-        const response = await fetch(API_URL)
+        const response = await fetch(`${API_URL}/stats`);
+        if (!response.ok) throw new Error("통계 조회 실패");
 
-        if (!response.ok) {
-          throw new Error("통계를 불러오지 못했습니다.")
-        }
-
-        const data: VisitorStatsData = await response.json()
-
-        if (typeof data.today !== "number" || typeof data.total !== "number") {
-          throw new Error("통계 데이터 형식이 올바르지 않습니다.")
-        }
-
-        if (!cancelled) {
-          setStats(data)
-          setError(false)
-        }
-      } catch {
-        if (!cancelled) {
-          setError(true)
-        }
+        const data: Stats = await response.json();
+        if (active) setStats(data);
+      } catch (error) {
+        console.error("통계 로드 실패:", error);
       }
-    }
+    };
 
-    loadStats()
+    loadStats();
+    fetch(`${API_URL}/track`).catch((error) => {
+      console.error("조회 기록 저장 실패:", error);
+    });
+    const timer = window.setInterval(loadStats, 30000);
 
     return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const format = (value: number) => new Intl.NumberFormat("ko-KR").format(value)
-
-  if (error && !stats) {
-    return (
-      <span className="visitor-stats">방문자 통계를 불러올 수 없습니다.</span>
-    )
-  }
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   return (
-    <span className="visitor-stats">
-      <span>오늘 조회 {format(stats?.today ?? 0)}회</span>
-      {" · "}
-      <span>누적 조회 {format(stats?.total ?? 0)}회</span>
-    </span>
-  )
+    <div className="visitor-stats">
+      {stats ? (
+        <>
+          <span>오늘 조회 {stats.today.toLocaleString()}회</span>
+          <span className="visitor-stats-separator"> · </span>
+          <span>누적 조회 {stats.total.toLocaleString()}회</span>
+        </>
+      ) : (
+        "조회 통계를 불러오는 중..."
+      )}
+    </div>
+  );
 }
