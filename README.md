@@ -36,5 +36,5 @@ Figma Make + Claude를 통해 웹 디자인을 구축하고, Vite React 프로�
 
 ## Images
 
-![](https://scontent-gmp1-1.cdninstagram.com/v/t51.82787-15/851828869_18025633472706664_7619269453257753873_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=109&ig_cache_key=NDAwOTk2NjAyMzY3NjA5NDc3MA%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuOTAwLnNkci5yZWd1bGFyX3Bob3RvLkMzIn0%3D&_nc_ohc=mwRcm_3fDbgQ7kNvwELy5GF&_nc_oc=AdrAdObWdS_CqspoOa71OoffbB66cEkHTcm62IIkeMMloFxIkbh1d_-G2i_jHw7XiLo&_nc_zt=23&_nc_ht=scontent-gmp1-1.cdninstagram.com&_nc_gid=Tf0Y-JS0jMOHSN5W40Srsw&_nc_ss=7b6a8&oh=00_AQOZjkLwm9E1kDQ2MjJ_M8Tv1jL0UrNwj1Nv5f21sr1G3A&oe=6AD93B3A)
+![](https://scontent-hkg4-1.cdninstagram.com/v/t51.82787-15/851887739_18025903829706664_969614189830887456_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=106&ig_cache_key=NDAxMDU3NzU0NjQ4MDQ2NTI1Ng%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkZFRUQueHBpZHMuOTAwLnNkci5yZWd1bGFyX3Bob3RvLkMzIn0%3D&_nc_ohc=u00CMlnvZWcQ7kNvwHPD5fv&_nc_oc=AdoemU_TURa_S56v8eo8BR9JGE5BJwVbz3CrGfvZsm4Vz08-TI5zFMs-q4z-u1H2ZnQ&_nc_zt=23&_nc_ht=scontent-hkg4-1.cdninstagram.com&_nc_gid=kTl2I1dO7Vue2snmgABt3A&_nc_ss=7aaaf&oh=00_AQOmA2jfCfkkOJFI5qG80O4pLVPJgqm_pLESoc4ZDnshyw&oe=6AE1EB7C)
 
