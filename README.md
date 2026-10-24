@@ -1,4 +1,4 @@
-# [원점수 계산기 by dohoon 바로가기](a320neofamily.github.io/grade-calculator/)
+# [원점수 계산기 by dohoon 바로가기](https://a320neofamily.github.io/grade-calculator/)
 중학교의 원점수를 계산하는 성적 계산기입니다.
 
 ## 평가계획과 반영비율을 한눈에
