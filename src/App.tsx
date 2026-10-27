@@ -1,4 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { User } from "firebase/auth";
+import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import { auth, googleProvider } from "./firebase";
+import { loadUserData, saveUserData, type UserData } from "./userDataApi";
 import VisitorStats from "./VisitorStats";
 
 type Assessment = {
@@ -778,6 +782,13 @@ const GEOJE_STORAGE_KEY = "semester-score-calculator-geoje-girls";
 const BUHEUNG_STORAGE_KEY = "semester-score-calculator-buheung";
 const GAEGEUM_STORAGE_KEY = "semester-score-calculator-gaegeum-girls";
 const CENTUM_STORAGE_KEY = "semester-score-calculator-centum";
+const SCHOOL_STORAGE_KEYS = {
+  manduk: STORAGE_KEY,
+  "geoje-girls": GEOJE_STORAGE_KEY,
+  buheung: BUHEUNG_STORAGE_KEY,
+  "gaegeum-girls": GAEGEUM_STORAGE_KEY,
+  centum: CENTUM_STORAGE_KEY,
+} as const;
 const THREE_LEVEL_SUBJECT_IDS = new Set(["pe", "music", "art"]);
 const schools = [
   { id: "geoje-girls", name: "거제여자중학교", shortName: "거제여중" },
@@ -914,14 +925,137 @@ export default function App() {
       centum: readScores(CENTUM_STORAGE_KEY),
     };
   });
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"local" | "loading" | "saving" | "synced" | "error">("local");
+  const scoresRef = useRef<UserData>(scoresBySchool);
+  const syncUserIdRef = useRef<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveQueueRef = useRef(Promise.resolve());
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(scoresBySchool.manduk));
-    localStorage.setItem(GEOJE_STORAGE_KEY, JSON.stringify(scoresBySchool["geoje-girls"]));
-    localStorage.setItem(BUHEUNG_STORAGE_KEY, JSON.stringify(scoresBySchool.buheung));
-    localStorage.setItem(GAEGEUM_STORAGE_KEY, JSON.stringify(scoresBySchool["gaegeum-girls"]));
-    localStorage.setItem(CENTUM_STORAGE_KEY, JSON.stringify(scoresBySchool.centum));
+    scoresRef.current = scoresBySchool;
+    Object.entries(SCHOOL_STORAGE_KEYS).forEach(([schoolId, storageKey]) => {
+      localStorage.setItem(storageKey, JSON.stringify(scoresBySchool[schoolId as keyof typeof SCHOOL_STORAGE_KEYS]));
+    });
+
+    const syncUserId = syncUserIdRef.current;
+    if (!syncUserId || auth.currentUser?.uid !== syncUserId) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const dataToSave = scoresRef.current;
+      setSyncStatus("saving");
+      saveQueueRef.current = saveQueueRef.current
+        .catch(() => undefined)
+        .then(async () => {
+          if (auth.currentUser?.uid !== syncUserId) return;
+          await saveUserData(dataToSave);
+          if (auth.currentUser?.uid === syncUserId) setSyncStatus("synced");
+        })
+        .catch(() => {
+          if (auth.currentUser?.uid === syncUserId) setSyncStatus("error");
+        });
+    }, 600);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
   }, [scoresBySchool]);
+
+  useEffect(() => {
+    let authGeneration = 0;
+    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+      const generation = ++authGeneration;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      syncUserIdRef.current = null;
+      setUser(nextUser);
+      setAuthReady(true);
+
+      if (!nextUser) {
+        setSyncStatus("local");
+        return;
+      }
+
+      setSyncStatus("loading");
+      try {
+        const { data: cloudData } = await loadUserData();
+        if (generation !== authGeneration || auth.currentUser?.uid !== nextUser.uid) return;
+
+        // Cloud values win on conflicts; local-only values are retained and uploaded.
+        const localData = scoresRef.current;
+        const mergedData = Object.fromEntries(
+          Object.keys(SCHOOL_STORAGE_KEYS).map((schoolId) => [
+            schoolId,
+            { ...(localData[schoolId] || {}), ...(cloudData?.[schoolId] || {}) },
+          ]),
+        ) as UserData;
+
+        scoresRef.current = mergedData;
+        syncUserIdRef.current = nextUser.uid;
+        setScoresBySchool(mergedData as Record<keyof typeof SCHOOL_STORAGE_KEYS, Scores>);
+        setSyncStatus("synced");
+      } catch {
+        if (generation === authGeneration) setSyncStatus("error");
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  async function handleSignIn() {
+    setSyncStatus("loading");
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch {
+      setSyncStatus("error");
+    }
+  }
+
+  async function handleSignOut() {
+    try {
+      await signOut(auth);
+    } catch {
+      setSyncStatus("error");
+    }
+  }
+
+  const authControl = (
+    <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
+      {user ? (
+        <>
+          <span className="max-w-44 truncate font-semibold text-slate-600" title={user.email || undefined}>
+            {user.displayName || user.email || "Google 사용자"}
+          </span>
+          <span className={syncStatus === "error" ? "text-rose-600" : "text-slate-400"}>
+            {syncStatus === "loading"
+              ? "불러오는 중"
+              : syncStatus === "saving"
+                ? "저장 중"
+                : syncStatus === "error"
+                  ? "동기화 오류 · 로컬 저장 중"
+                  : "동기화됨"}
+          </span>
+          <button
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-bold text-slate-600 transition hover:bg-slate-50"
+            onClick={handleSignOut}
+            type="button"
+          >
+            로그아웃
+          </button>
+        </>
+      ) : (
+        <button
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-bold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:opacity-50"
+          disabled={!authReady || syncStatus === "loading"}
+          onClick={handleSignIn}
+          type="button"
+        >
+          Google로 로그인
+        </button>
+      )}
+    </div>
+  );
 
   const dataSchoolId = activeSchoolId || schoolChoice || schools[0].id;
   const subjects = getSubjects(dataSchoolId);
@@ -1085,6 +1219,7 @@ export default function App() {
               <Icon name="arrow" className="size-5" />
             </button>
           </form>
+          <div className="mt-4">{authControl}</div>
         <div style={{textAlign: "center", marginTop: "8px"}}>
           <VisitorStats />
         </div>
@@ -1109,6 +1244,7 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <div className="mr-1 hidden md:block">{authControl}</div>
             <button
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
               onClick={() => setActiveSchoolId(null)}
