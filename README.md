@@ -21,10 +21,6 @@
 
 [Instagram @grade.calculator_](https://www.instagram.com/grade.calculator_/)로 해당 학교의 평가계획표나 중학교 이름을 보내주세요.
 
-## 개발방식
-
-Figma Make + Claude를 통해 웹 디자인을 구축하고, Vite React 프로젝트로 기능을 구현했어요.
-
 ## Special thanks for
 
  - Figma Make
