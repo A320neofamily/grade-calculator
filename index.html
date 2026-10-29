@@ -10,6 +10,15 @@
     
       gtag('config', 'G-JWGY3BC4BK');
     </script>
+    <script>
+      (() => {
+        const savedTheme = localStorage.getItem('grade-calculator-theme');
+        const dark = savedTheme === 'dark' ||
+          (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- figma:head-start -->
     <meta charset="UTF-8" />

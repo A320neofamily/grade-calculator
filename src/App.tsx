@@ -737,6 +737,139 @@ const centumSubjects: Subject[] = [
   },
 ];
 
+const busanDaesinSubjects: Subject[] = [
+  {
+    id: "korean",
+    name: "국어",
+    color: "bg-rose-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 20 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 20 },
+      { id: "reading", type: "수행평가", title: "한학기한권읽기", period: "2학기", weight: 30 },
+      { id: "inquiry", type: "수행평가", title: "주제탐구발표", period: "2학기", weight: 30 },
+    ],
+  },
+  {
+    id: "ethics",
+    name: "도덕",
+    color: "bg-amber-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 40 },
+      { id: "debate", type: "수행평가", title: "도덕적가치토론", period: "2학기", weight: 30 },
+      { id: "cardnews", type: "수행평가", title: "환경카드뉴스만들기", period: "2학기", weight: 30 },
+    ],
+  },
+  {
+    id: "history",
+    name: "역사",
+    color: "bg-orange-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "inquiry", type: "수행평가", title: "주제탐구", period: "2학기", weight: 20 },
+      { id: "writing", type: "수행평가", title: "역사글쓰기", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "math",
+    name: "수학",
+    color: "bg-indigo-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "triangle", type: "수행평가", title: "삼각형프로젝트", period: "2학기", weight: 20 },
+      { id: "probability", type: "수행평가", title: "실생활확률프로젝트", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "science",
+    name: "과학",
+    color: "bg-emerald-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "nutrient", type: "수행평가", title: "영양소검출하기", period: "2학기", weight: 20 },
+      { id: "periodic", type: "수행평가", title: "주기율표탐구하기", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "tech",
+    name: "기술·가정",
+    color: "bg-teal-500",
+    assessments: [
+      { id: "roleplay", type: "수행평가", title: "가족갈등해결역할극", period: "2학기", weight: 50 },
+      { id: "presentation", type: "수행평가", title: "과제발표", period: "2학기", weight: 25 },
+      {
+        id: "portfolio",
+        type: "수행평가",
+        title: "신재생에너지및생명·적정기술포트폴리오",
+        period: "2학기",
+        weight: 25,
+      },
+    ],
+  },
+  {
+    id: "english",
+    name: "영어",
+    color: "bg-blue-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "listening", type: "수행평가", title: "영어듣기", period: "2학기", weight: 10 },
+      { id: "reading", type: "수행평가", title: "영어리딩프로그레스", period: "2학기", weight: 15 },
+      { id: "writing", type: "수행평가", title: "영어글쓰기", period: "2학기", weight: 15 },
+    ],
+  },
+  {
+    id: "pe",
+    name: "체육",
+    color: "bg-cyan-500",
+    assessments: [
+      { id: "flagfootball-skill", type: "수행평가", title: "플래그풋볼기능", period: "2학기", weight: 30 },
+      { id: "flagfootball-game", type: "수행평가", title: "플래그풋볼경기", period: "2학기", weight: 20 },
+      { id: "handball-skill", type: "수행평가", title: "핸드볼기능", period: "2학기", weight: 30 },
+      { id: "handball-game", type: "수행평가", title: "핸드볼경기", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "music",
+    name: "음악",
+    color: "bg-violet-500",
+    assessments: [
+      { id: "instrument", type: "수행평가", title: "기악(기타연주하기)", period: "2학기", weight: 50 },
+      { id: "singing", type: "수행평가", title: "가창(뮤지컬넘버부르기)", period: "2학기", weight: 50 },
+    ],
+  },
+  {
+    id: "art",
+    name: "미술",
+    color: "bg-fuchsia-500",
+    assessments: [
+      { id: "goods", type: "수행평가", title: "굿즈디자인", period: "2학기", weight: 50 },
+      { id: "ceramic", type: "수행평가", title: "도자기도안제작", period: "2학기", weight: 50 },
+    ],
+  },
+  {
+    id: "japanese",
+    name: "일본어",
+    color: "bg-red-500",
+    assessments: [
+      { id: "portfolio", type: "수행평가", title: "일본어기초포트폴리오", period: "2학기", weight: 50 },
+      { id: "project", type: "수행평가", title: "일본어성장프로젝트", period: "2학기", weight: 50 },
+    ],
+  },
+  {
+    id: "chinese",
+    name: "중국어",
+    color: "bg-lime-500",
+    assessments: [
+      { id: "vocabulary", type: "수행평가", title: "중국어단어성장프로젝트", period: "2학기", weight: 50 },
+      { id: "culture", type: "수행평가", title: "중국문화발표", period: "2학기", weight: 50 },
+    ],
+  },
+  { id: "career", name: "진로", color: "bg-slate-400", assessments: [], passOnly: true },
+];
+
 const SUBJECT_ORDER = [
   "korean",
   "math",
@@ -776,25 +909,29 @@ const orderedGeojeSubjects = orderSubjects(geojeSubjects);
 const orderedBuheungSubjects = orderSubjects(buheungSubjects);
 const orderedGaegeumSubjects = orderSubjects(gaegeumSubjects);
 const orderedCentumSubjects = orderSubjects(centumSubjects);
+const orderedBusanDaesinSubjects = orderSubjects(busanDaesinSubjects);
 
 const STORAGE_KEY = "semester-score-calculator";
 const GEOJE_STORAGE_KEY = "semester-score-calculator-geoje-girls";
 const BUHEUNG_STORAGE_KEY = "semester-score-calculator-buheung";
 const GAEGEUM_STORAGE_KEY = "semester-score-calculator-gaegeum-girls";
 const CENTUM_STORAGE_KEY = "semester-score-calculator-centum";
+const BUSAN_DAESIN_STORAGE_KEY = "semester-score-calculator-busan-daesin";
 const SCHOOL_STORAGE_KEYS = {
   manduk: STORAGE_KEY,
   "geoje-girls": GEOJE_STORAGE_KEY,
   buheung: BUHEUNG_STORAGE_KEY,
   "gaegeum-girls": GAEGEUM_STORAGE_KEY,
   centum: CENTUM_STORAGE_KEY,
+  "busan-daesin": BUSAN_DAESIN_STORAGE_KEY,
 } as const;
 const THREE_LEVEL_SUBJECT_IDS = new Set(["pe", "music", "art"]);
 const schools = [
+  { id: "gaegeum-girls", name: "개금여자중학교", shortName: "개금여중" },
   { id: "geoje-girls", name: "거제여자중학교", shortName: "거제여중" },
   { id: "manduk", name: "만덕중학교", shortName: "만덕중" },
+  { id: "busan-daesin", name: "부산대신중학교", shortName: "부산대신중" },
   { id: "buheung", name: "부흥중학교", shortName: "부흥중" },
-  { id: "gaegeum-girls", name: "개금여자중학교", shortName: "개금여중" },
   { id: "centum", name: "센텀중학교", shortName: "센텀중" },
 ] as const;
 
@@ -803,6 +940,7 @@ function getSubjects(schoolId: (typeof schools)[number]["id"]) {
   if (schoolId === "buheung") return orderedBuheungSubjects;
   if (schoolId === "gaegeum-girls") return orderedGaegeumSubjects;
   if (schoolId === "centum") return orderedCentumSubjects;
+  if (schoolId === "busan-daesin") return orderedBusanDaesinSubjects;
   return orderedMandukSubjects;
 }
 
@@ -847,7 +985,7 @@ function Icon({
   name,
   className = "size-5",
 }: {
-  name: "book" | "chart" | "check" | "spark" | "trash" | "arrow";
+  name: "book" | "chart" | "check" | "spark" | "trash" | "arrow" | "sun" | "moon";
   className?: string;
 }) {
   const paths = {
@@ -885,6 +1023,13 @@ function Icon({
         <path d="m9 18 6-6-6-6" />
       </>
     ),
+    sun: (
+      <>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41" />
+      </>
+    ),
+    moon: <path d="M20.5 14.1A8.5 8.5 0 0 1 9.9 3.5 8.5 8.5 0 1 0 20.5 14.1Z" />,
   };
 
   return (
@@ -904,6 +1049,11 @@ function Icon({
 }
 
 export default function App() {
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    const savedTheme = localStorage.getItem("grade-calculator-theme");
+    if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
   const [schoolChoice, setSchoolChoice] = useState<(typeof schools)[number]["id"] | "">("");
   const [activeSchoolId, setActiveSchoolId] = useState<(typeof schools)[number]["id"] | null>(null);
   const [activeSubjectId, setActiveSubjectId] = useState(mandukSubjects[0].id);
@@ -923,6 +1073,7 @@ export default function App() {
       buheung: readScores(BUHEUNG_STORAGE_KEY),
       "gaegeum-girls": readScores(GAEGEUM_STORAGE_KEY),
       centum: readScores(CENTUM_STORAGE_KEY),
+      "busan-daesin": readScores(BUSAN_DAESIN_STORAGE_KEY),
     };
   });
   const [user, setUser] = useState<User | null>(null);
@@ -932,6 +1083,24 @@ export default function App() {
   const syncUserIdRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveQueueRef = useRef(Promise.resolve());
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === "dark");
+    root.style.colorScheme = theme;
+  }, [theme]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const followSystemTheme = (event: MediaQueryListEvent) => {
+      if (!localStorage.getItem("grade-calculator-theme")) {
+        setTheme(event.matches ? "dark" : "light");
+      }
+    };
+
+    media.addEventListener("change", followSystemTheme);
+    return () => media.removeEventListener("change", followSystemTheme);
+  }, []);
 
   useEffect(() => {
     scoresRef.current = scoresBySchool;
@@ -1020,11 +1189,31 @@ export default function App() {
     }
   }
 
+  function toggleTheme() {
+    setTheme((current) => {
+      const nextTheme = current === "dark" ? "light" : "dark";
+      localStorage.setItem("grade-calculator-theme", nextTheme);
+      return nextTheme;
+    });
+  }
+
+  const themeControl = (
+    <button
+      aria-label={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
+      className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:bg-slate-800 dark:hover:text-[#aab2cc]"
+      onClick={toggleTheme}
+      title={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
+      type="button"
+    >
+      <Icon name={theme === "dark" ? "sun" : "moon"} className="size-5" />
+    </button>
+  );
+
   const authControl = (
     <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
       {user ? (
         <>
-          <span className="max-w-44 truncate font-semibold text-slate-600" title={user.email || undefined}>
+          <span className="max-w-44 truncate font-semibold text-slate-600 dark:text-slate-300" title={user.email || undefined}>
             {user.displayName || user.email || "Google 사용자"}
           </span>
           <span className={syncStatus === "error" ? "text-rose-600" : "text-slate-400"}>
@@ -1037,7 +1226,7 @@ export default function App() {
                   : "동기화됨"}
           </span>
           <button
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-bold text-slate-600 transition hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
             onClick={handleSignOut}
             type="button"
           >
@@ -1046,7 +1235,7 @@ export default function App() {
         </>
       ) : (
         <button
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-bold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:opacity-50"
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-bold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-500 dark:hover:text-[#aab2cc]"
           disabled={!authReady || syncStatus === "loading"}
           onClick={handleSignIn}
           type="button"
@@ -1156,25 +1345,29 @@ export default function App() {
 
   if (!activeSchool) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-5 py-12 text-white">
-        <div className="absolute -left-24 top-16 size-72 rounded-full bg-indigo-600/20 blur-3xl" />
-        <div className="absolute -right-20 bottom-8 size-80 rounded-full bg-violet-500/15 blur-3xl" />
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-100 px-5 py-12 text-slate-950 transition-colors dark:bg-slate-950 dark:text-white">
+        <div className="absolute right-5 top-5 z-10 sm:right-8 sm:top-8">{themeControl}</div>
+        <div className="absolute -left-24 top-16 size-72 rounded-full bg-indigo-500/15 blur-3xl dark:bg-indigo-600/20" />
+        <div className="absolute -right-20 bottom-8 size-80 rounded-full bg-violet-400/15 blur-3xl dark:bg-violet-500/15" />
         <main className="relative w-full max-w-lg">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-xl shadow-indigo-950">
+            <div
+              className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-indigo-500 text-white"
+              style={{ boxShadow: "oklab(0.257 0.0176167 -0.088259) 0px 8px 10px -6px" }}
+            >
               <Icon name="book" className="size-7" />
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-400">
-              원점수 계산기 by dohoon
+            <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
+              원점수 계산기 by dohoon <span className="font-semibold text-slate-400 dark:text-slate-500">v2.2.1</span>
             </p>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl mt-2">학교를 선택해 주세요</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-400">
+            <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
               학교별 평가계획에 맞춰 수행평가와 지필평가 원점수를 계산합니다.
             </p>
           </div>
 
           <form
-            className="rounded-3xl border border-white/10 bg-white p-6 text-slate-900 shadow-2xl shadow-black/30 sm:p-8"
+            className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl shadow-slate-300/50 sm:p-8 dark:border-white/10 dark:bg-slate-900 dark:text-white dark:shadow-black/30"
             onSubmit={(event) => {
               event.preventDefault();
               if (!schoolChoice) return;
@@ -1183,11 +1376,11 @@ export default function App() {
             }}
           >
             <label className="block">
-              <span className="mb-2 block text-sm font-extrabold text-slate-700">학교 선택</span>
+              <span className="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200">학교 선택</span>
               <div className="relative">
                 <select
-                  className={`h-14 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 py-0 pl-4 pr-12 text-base font-bold outline-none transition hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 ${
-                    schoolChoice ? "text-slate-900" : "text-slate-400"
+                  className={`h-14 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 py-0 pl-4 pr-12 text-base font-bold outline-none transition hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600 dark:focus:border-indigo-400 dark:focus:bg-slate-800 dark:focus:ring-indigo-900/50 ${
+                    schoolChoice ? "text-slate-900 dark:text-white" : "text-slate-400"
                   }`}
                   onChange={(event) =>
                     setSchoolChoice(event.target.value as (typeof schools)[number]["id"] | "")
@@ -1220,24 +1413,34 @@ export default function App() {
             </button>
           </form>
           <div className="mt-4">{authControl}</div>
-        <div style={{textAlign: "center", marginTop: "8px"}}>
-          <VisitorStats />
-        </div>
+          <div className="mt-2 text-center">
+            <VisitorStats />
+          </div>
+          <div className="mt-3 text-center">
+            <a
+              className="text-sm font-semibold text-slate-500 transition hover:text-indigo-600 hover:underline dark:text-slate-400 dark:hover:text-white"
+              href="https://www.instagram.com/grade.calculator_/"
+              rel="noreferrer"
+              target="_blank"
+            >
+              Instagram · @grade.calculator_
+            </a>
+          </div>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200/80 bg-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
+      <header className="border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
               <Icon name="book" className="size-5" />
             </div>
             <div>
-              <p className="text-[11px] font-bold tracking-[0.16em] text-indigo-600">
+              <p className="text-[11px] font-bold tracking-[0.16em] text-indigo-600 dark:text-[#aab2cc]">
                 {activeSchool.shortName} · 2-2 평가계획
               </p>
               <p className="text-lg font-extrabold tracking-tight">원점수 계산기</p>
@@ -1245,8 +1448,9 @@ export default function App() {
           </div>
           <div className="flex items-center gap-1">
             <div className="mr-1 hidden md:block">{authControl}</div>
+            {themeControl}
             <button
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               onClick={() => setActiveSchoolId(null)}
               type="button"
             >
@@ -1254,7 +1458,7 @@ export default function App() {
               <span className="hidden sm:inline">학교 변경</span>
             </button>
             <button
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               disabled={!Object.values(scores).some((value) => value !== "")}
               onClick={clearScores}
               type="button"
@@ -1269,58 +1473,58 @@ export default function App() {
       <main className="mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-10">
         <section className="mb-8">
           <div className="mb-5">
-            <p className="mb-1 text-sm font-bold text-indigo-600">내 성적 한눈에 보기</p>
+            <p className="mb-1 text-sm font-bold text-indigo-600 dark:text-[#aab2cc]">내 성적 한눈에 보기</p>
             <h1 className="whitespace-nowrap text-[25px] font-black tracking-tight">
               2026 {activeSchool.shortName} 2-2 성적계산기
             </h1>
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm shadow-indigo-100/60">
-              <div className="mb-4 flex size-9 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
+            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm shadow-indigo-100/60 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:shadow-none">
+              <div className="mb-4 hidden size-9 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm sm:flex dark:bg-slate-800 dark:text-[#aab2cc]">
                 <Icon name="chart" className="size-5" />
               </div>
-              <p className="text-sm font-semibold text-indigo-700">중간고사 {midtermAverage.total}과목 평균</p>
-              <p className="mt-1 text-2xl font-black text-indigo-950">
+              <p className="text-sm font-semibold text-indigo-700 dark:text-[#aab2cc]">중간고사 {midtermAverage.total}과목 평균</p>
+              <p className="mt-1 text-2xl font-black text-indigo-950 dark:text-[#c4cadc]">
                 {midtermAverage.average === null ? "—" : midtermAverage.average.toFixed(2)}
                 {midtermAverage.average !== null && (
-                  <span className="ml-1 text-sm font-semibold text-indigo-400">점</span>
+                  <span className="ml-1 text-sm font-semibold text-indigo-400 dark:text-[#8f99b8]">점</span>
                 )}
               </p>
-              <p className="mt-1 text-[11px] font-semibold text-indigo-400">
+              <p className="mt-1 text-[11px] font-semibold text-indigo-400 dark:text-[#8f99b8]">
                 {midtermAverage.entered}/{midtermAverage.total}과목 입력
               </p>
             </div>
-            <div className="rounded-2xl border border-violet-200 bg-violet-50 p-5 shadow-sm shadow-violet-100/60">
-              <div className="mb-4 flex size-9 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
+            <div className="rounded-2xl border border-violet-200 bg-violet-50 p-5 shadow-sm shadow-violet-100/60 dark:border-violet-500/30 dark:bg-violet-500/10 dark:shadow-none">
+              <div className="mb-4 hidden size-9 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm sm:flex dark:bg-slate-800 dark:text-[#b5adca]">
                 <Icon name="chart" className="size-5" />
               </div>
-              <p className="text-sm font-semibold text-violet-700">기말고사 {finalAverage.total}과목 평균</p>
-              <p className="mt-1 text-2xl font-black text-violet-950">
+              <p className="text-sm font-semibold text-violet-700 dark:text-[#b5adca]">기말고사 {finalAverage.total}과목 평균</p>
+              <p className="mt-1 text-2xl font-black text-violet-950 dark:text-[#cec9da]">
                 {finalAverage.average === null ? "—" : finalAverage.average.toFixed(2)}
                 {finalAverage.average !== null && (
-                  <span className="ml-1 text-sm font-semibold text-violet-400">점</span>
+                  <span className="ml-1 text-sm font-semibold text-violet-400 dark:text-[#978eaf]">점</span>
                 )}
               </p>
-              <p className="mt-1 text-[11px] font-semibold text-violet-400">
+              <p className="mt-1 text-[11px] font-semibold text-violet-400 dark:text-[#978eaf]">
                 {finalAverage.entered}/{finalAverage.total}과목 입력
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50">
-              <div className="mb-4 flex size-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+              <div className="mb-4 hidden size-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 sm:flex dark:bg-indigo-500/10 dark:text-[#aab2cc]">
                 <Icon name="check" className="size-5" />
               </div>
-              <p className="text-sm font-semibold text-slate-500">입력 완료 과목</p>
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">입력 완료 과목</p>
               <p className="mt-1 text-2xl font-black">
                 {completedResults.length}
                 <span className="ml-1 text-sm font-semibold text-slate-400">/ {gradedSubjectCount}과목</span>
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50">
-              <div className="mb-4 flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+              <div className="mb-4 hidden size-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 sm:flex dark:bg-emerald-500/10 dark:text-emerald-300">
                 <Icon name="chart" className="size-5" />
               </div>
-              <p className="text-sm font-semibold text-slate-500">원점수 평균</p>
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">원점수 평균</p>
               <p className="mt-1 text-2xl font-black">
                 {completedResults.length ? average.toFixed(1) : "—"}
                 {completedResults.length > 0 && <span className="ml-1 text-sm font-semibold text-slate-400">점</span>}
@@ -1330,8 +1534,8 @@ export default function App() {
         </section>
 
         <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
-          <aside className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
-            <div className="border-b border-slate-100 px-5 py-4">
+          <aside className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+            <div className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
               <h2 className="font-extrabold">과목 선택</h2>
               <p className="mt-1 text-xs text-slate-400">과목별 입력 현황을 확인하세요</p>
             </div>
@@ -1345,10 +1549,10 @@ export default function App() {
                     key={subject.id}
                     className={`group flex min-w-44 items-center gap-3 rounded-xl px-3 py-3 text-left transition lg:w-full ${
                       passOnly
-                        ? "cursor-not-allowed bg-slate-50 text-slate-400"
+                        ? "cursor-not-allowed bg-slate-50 text-slate-400 dark:bg-slate-800/60 dark:text-slate-500"
                         : active
-                          ? "bg-indigo-50 text-indigo-700"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-[#aab2cc]"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                     }`}
                     disabled={passOnly}
                     onClick={() => setActiveSubjectId(subject.id)}
@@ -1363,28 +1567,28 @@ export default function App() {
                             ? "text-slate-600"
                             : result.complete
                               ? active
-                                ? "text-indigo-700"
-                                : "text-slate-900"
-                              : "text-slate-300"
+                                ? "text-indigo-700 dark:text-[#aab2cc]"
+                                : "text-slate-900 dark:text-white"
+                              : "text-slate-300 dark:text-slate-600"
                         }`}
                       >
                         {passOnly ? "P" : result.complete ? getAchievement(result.score, subject.id) : "—"}
                       </span>
                       <span
-                        className={`text-[11px] leading-4 ${active ? "text-indigo-400" : "text-slate-400"}`}
+                        className={`text-[11px] leading-4 ${active ? "text-indigo-400 dark:text-[#8f99b8]" : "text-slate-400"}`}
                       >
                         {passOnly ? "원점수 미산출" : result.complete ? "입력 완료" : `${result.filled}/${result.total} 입력`}
                       </span>
                       <span
                         className={`text-right text-[11px] font-semibold leading-4 ${
-                          active ? "text-indigo-400" : "text-slate-400"
+                          active ? "text-indigo-400 dark:text-[#8f99b8]" : "text-slate-400"
                         }`}
                       >
                         {!passOnly && result.complete ? `${result.score.toFixed(1)}점` : ""}
                       </span>
                     </span>
                     {!passOnly && (
-                      <Icon name="arrow" className={`size-4 shrink-0 ${active ? "text-indigo-400" : "text-slate-300"}`} />
+                      <Icon name="arrow" className={`size-4 shrink-0 ${active ? "text-indigo-400 dark:text-[#8f99b8]" : "text-slate-300"}`} />
                     )}
                   </button>
                 );
@@ -1392,8 +1596,8 @@ export default function App() {
             </nav>
           </aside>
 
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
-            <div className="border-b border-slate-100 px-5 py-6 sm:px-7">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+            <div className="border-b border-slate-100 px-5 py-6 dark:border-slate-800 sm:px-7">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <span className={`size-3 rounded-full ${activeSubject.color}`} />
@@ -1401,12 +1605,12 @@ export default function App() {
                     <div className="flex items-center gap-2">
                       <h2 className="text-xl font-black">{activeSubject.name}</h2>
                       {activeResult.complete && (
-                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">
+                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
                           입력 완료
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                       {activeResult.filled}개 입력 · 총 {activeResult.total}개 평가
                     </p>
                   </div>
@@ -1421,15 +1625,15 @@ export default function App() {
                   </p>
                 </div>
               </div>
-              <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+              <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                 <div
                   className="h-full rounded-full bg-indigo-600 transition-all duration-300"
                   style={{ width: `${(activeResult.filled / activeResult.total) * 100}%` }}
                 />
               </div>
               {achievementGuide && (
-                <div className="mt-5 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-amber-600 shadow-sm">
+                <div className="mt-5 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-amber-600 shadow-sm dark:bg-slate-800 dark:text-amber-300">
                     <Icon name="spark" className="size-4" />
                   </div>
                   <div>
@@ -1438,7 +1642,7 @@ export default function App() {
                         ? "이런,"
                         : `최고 성취도 ${achievementGuide.grade}까지 도전할 수 있어요`}
                     </p>
-                    <p className="mt-1 text-xs leading-5 text-amber-800">
+                    <p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">
                       {achievementGuide.grade === "E" ? (
                         <>
                           남은 &lsquo;{achievementGuide.remaining.title}&rsquo;에서 100점을 받아도 성취도는
@@ -1469,34 +1673,34 @@ export default function App() {
                         총 {items.reduce((sum, item) => sum + item.weight, 0)}% 반영
                       </span>
                     </div>
-                    <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200">
+                    <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
                       {items.map((item) => {
                         const key = scoreKey(activeSubject.id, item.id);
                         const value = scores[key] ?? "";
                         const contribution = Number(value || 0) * (item.weight / 100);
                         return (
                           <div
-                            className="grid gap-4 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_8rem_8.5rem] sm:items-center sm:px-5"
+                            className="grid gap-4 bg-white p-4 dark:bg-slate-900 sm:grid-cols-[minmax(0,1fr)_8rem_8.5rem] sm:items-center sm:px-5"
                             key={item.id}
                           >
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-bold text-slate-800">{item.title}</p>
+                              <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{item.title}</p>
                               <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-400">
                                 <span>{item.period}</span>
                                 <span className="size-1 rounded-full bg-slate-300" />
-                                <span className="font-semibold text-indigo-600">{item.weight}% 반영</span>
+                                <span className="font-semibold text-indigo-600 dark:text-[#aab2cc]">{item.weight}% 반영</span>
                               </div>
                             </div>
                             <div className="hidden text-right sm:block">
                               <p className="text-[11px] font-medium text-slate-400">반영 점수</p>
-                              <p className="mt-0.5 text-sm font-bold tabular-nums text-slate-600">
+                              <p className="mt-0.5 text-sm font-bold tabular-nums text-slate-600 dark:text-slate-300">
                                 {value === "" ? "—" : contribution.toFixed(1)}점
                               </p>
                             </div>
                             <label className="relative block">
                               <span className="sr-only">{item.title} 점수</span>
                               <input
-                                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-12 text-right text-base font-extrabold tabular-nums outline-none transition placeholder:font-medium placeholder:text-slate-300 hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-12 text-right text-base font-extrabold tabular-nums outline-none transition placeholder:font-medium placeholder:text-slate-300 hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-600 dark:hover:border-slate-600 dark:focus:border-indigo-400 dark:focus:bg-slate-800 dark:focus:ring-indigo-900/50"
                                 inputMode="decimal"
                                 max="100"
                                 min="0"

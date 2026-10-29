@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import "./VisitorStats.css"
+import "./VisitorStats.css";
 
-const API_URL =
-  "https://grade-calculator-stats.grade-calculator.workers.dev";
+const API_URL = "https://grade-calculator-stats.grade-calculator.workers.dev";
 
 type Stats = {
   today: number;
@@ -19,7 +18,7 @@ export default function VisitorStats() {
 
     const loadStats = async () => {
       try {
-        const response = await fetch(`${API_URL}/stats`);
+        const response = await fetch(`${API_URL}/stats`, { cache: "no-store" });
 
         if (!response.ok) {
           throw new Error("통계 조회 실패");
@@ -27,20 +26,18 @@ export default function VisitorStats() {
 
         const data: Stats = await response.json();
 
-        if (active) {
+        if (active && Number.isFinite(data.today) && Number.isFinite(data.total)) {
           setStats(data);
         }
-      } catch (error) {
-        console.error("통계 로드 실패:", error);
+      } catch {
+        // Visitor stats are optional; keep them hidden and retry on the next interval.
       }
     };
 
     const trackAndLoad = async () => {
       try {
-        await fetch(`${API_URL}/track`);
-      } catch (error) {
-        console.error("조회 기록 저장 실패:", error);
-      }
+        await fetch(`${API_URL}/track`, { cache: "no-store", keepalive: true });
+      } catch {}
 
       await loadStats();
     };
@@ -55,11 +52,13 @@ export default function VisitorStats() {
     };
   }, []);
 
+  if (!stats) return null;
+
   return (
     <span className="visitor-stats">
-      <span>오늘 조회 {format(stats?.today ?? 0)}회</span>
+      <span>오늘 조회 {format(stats.today)}회</span>
       {" · "}
-      <span>누적 조회 {format(stats?.total ?? 0)}회</span>
+      <span>누적 조회 {format(stats.total)}회</span>
     </span>
   );
 }
