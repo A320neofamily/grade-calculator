@@ -1,5 +1,6 @@
 # [원점수 계산기 by dohoon 바로가기](https://a320neofamily.github.io/grade-calculator/)
-중학교의 원점수를 계산하는 성적 계산기입니다.
+중학교의 원점수를 계산하는 성적 계산기입니다.  [원점수 계산기 by dohoon 사용법 바로가기](https://github.com/A320neofamily/grade-calculator/wiki/%EC%9B%90%EC%A0%90%EC%88%98-%EC%84%B1%EC%A0%81%EA%B3%84%EC%82%B0%EA%B8%B0-%EC%82%AC%EC%9A%A9%EB%B2%95)
+<br>
 
 ## 평가계획과 반영비율을 한눈에
 
