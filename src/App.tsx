@@ -4,6 +4,7 @@ import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
 import { loadUserData, saveUserData, type UserData } from "./userDataApi";
 import VisitorStats from "./VisitorStats";
+import { version as appVersion } from "../package.json";
 
 type Assessment = {
   id: string;
@@ -1358,7 +1359,7 @@ export default function App() {
               <Icon name="book" className="size-7" />
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
-              원점수 계산기 by dohoon <span className="font-semibold text-slate-400 dark:text-slate-500">v2.2.1</span>
+              원점수 계산기 by dohoon <span className="font-semibold text-slate-400 dark:text-slate-500">v{appVersion}</span>
             </p>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl mt-2">학교를 선택해 주세요</h1>
             <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
