@@ -745,8 +745,8 @@ const busanDaesinSubjects: Subject[] = [
     assessments: [
       { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 20 },
       { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 20 },
-      { id: "reading", type: "수행평가", title: "한학기한권읽기", period: "2학기", weight: 30 },
-      { id: "inquiry", type: "수행평가", title: "주제탐구발표", period: "2학기", weight: 30 },
+      { id: "reading", type: "수행평가", title: "한 학기 한 권 읽기", period: "2학기", weight: 30 },
+      { id: "inquiry", type: "수행평가", title: "주제 탐구 발표", period: "2학기", weight: 30 },
     ],
   },
   {
@@ -755,8 +755,8 @@ const busanDaesinSubjects: Subject[] = [
     color: "bg-amber-500",
     assessments: [
       { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 40 },
-      { id: "debate", type: "수행평가", title: "도덕적가치토론", period: "2학기", weight: 30 },
-      { id: "cardnews", type: "수행평가", title: "환경카드뉴스만들기", period: "2학기", weight: 30 },
+      { id: "debate", type: "수행평가", title: "도덕적 가치 토론", period: "2학기", weight: 30 },
+      { id: "cardnews", type: "수행평가", title: "환경 카드 뉴스 만들기", period: "2학기", weight: 30 },
     ],
   },
   {
@@ -766,8 +766,8 @@ const busanDaesinSubjects: Subject[] = [
     assessments: [
       { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
       { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
-      { id: "inquiry", type: "수행평가", title: "주제탐구", period: "2학기", weight: 20 },
-      { id: "writing", type: "수행평가", title: "역사글쓰기", period: "2학기", weight: 20 },
+      { id: "inquiry", type: "수행평가", title: "주제 탐구", period: "2학기", weight: 20 },
+      { id: "writing", type: "수행평가", title: "역사 글쓰기", period: "2학기", weight: 20 },
     ],
   },
   {
@@ -777,8 +777,8 @@ const busanDaesinSubjects: Subject[] = [
     assessments: [
       { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
       { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
-      { id: "triangle", type: "수행평가", title: "삼각형프로젝트", period: "2학기", weight: 20 },
-      { id: "probability", type: "수행평가", title: "실생활확률프로젝트", period: "2학기", weight: 20 },
+      { id: "triangle", type: "수행평가", title: "삼각형 프로젝트", period: "2학기", weight: 20 },
+      { id: "probability", type: "수행평가", title: "실생활 확률 프로젝트", period: "2학기", weight: 20 },
     ],
   },
   {
@@ -788,8 +788,8 @@ const busanDaesinSubjects: Subject[] = [
     assessments: [
       { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
       { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
-      { id: "nutrient", type: "수행평가", title: "영양소검출하기", period: "2학기", weight: 20 },
-      { id: "periodic", type: "수행평가", title: "주기율표탐구하기", period: "2학기", weight: 20 },
+      { id: "nutrient", type: "수행평가", title: "영양소 검출하기", period: "2학기", weight: 20 },
+      { id: "periodic", type: "수행평가", title: "주기율표 탐구하기", period: "2학기", weight: 20 },
     ],
   },
   {
@@ -797,12 +797,12 @@ const busanDaesinSubjects: Subject[] = [
     name: "기술·가정",
     color: "bg-teal-500",
     assessments: [
-      { id: "roleplay", type: "수행평가", title: "가족갈등해결역할극", period: "2학기", weight: 50 },
-      { id: "presentation", type: "수행평가", title: "과제발표", period: "2학기", weight: 25 },
+      { id: "roleplay", type: "수행평가", title: "가족 갈등 해결 역할극", period: "2학기", weight: 50 },
+      { id: "presentation", type: "수행평가", title: "과제 발표", period: "2학기", weight: 25 },
       {
         id: "portfolio",
         type: "수행평가",
-        title: "신재생에너지및생명·적정기술포트폴리오",
+        title: "신재생 에너지 및 생명·적정 기술 포트폴리오",
         period: "2학기",
         weight: 25,
       },
@@ -815,9 +815,9 @@ const busanDaesinSubjects: Subject[] = [
     assessments: [
       { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
       { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
-      { id: "listening", type: "수행평가", title: "영어듣기", period: "2학기", weight: 10 },
-      { id: "reading", type: "수행평가", title: "영어리딩프로그레스", period: "2학기", weight: 15 },
-      { id: "writing", type: "수행평가", title: "영어글쓰기", period: "2학기", weight: 15 },
+      { id: "listening", type: "수행평가", title: "영어 듣기", period: "2학기", weight: 10 },
+      { id: "reading", type: "수행평가", title: "영어 리딩 프로그레스", period: "2학기", weight: 15 },
+      { id: "writing", type: "수행평가", title: "영어 글쓰기", period: "2학기", weight: 15 },
     ],
   },
   {
@@ -825,10 +825,10 @@ const busanDaesinSubjects: Subject[] = [
     name: "체육",
     color: "bg-cyan-500",
     assessments: [
-      { id: "flagfootball-skill", type: "수행평가", title: "플래그풋볼기능", period: "2학기", weight: 30 },
-      { id: "flagfootball-game", type: "수행평가", title: "플래그풋볼경기", period: "2학기", weight: 20 },
-      { id: "handball-skill", type: "수행평가", title: "핸드볼기능", period: "2학기", weight: 30 },
-      { id: "handball-game", type: "수행평가", title: "핸드볼경기", period: "2학기", weight: 20 },
+      { id: "flagfootball-skill", type: "수행평가", title: "플래그 풋볼 기능", period: "2학기", weight: 30 },
+      { id: "flagfootball-game", type: "수행평가", title: "플래그 풋볼 경기", period: "2학기", weight: 20 },
+      { id: "handball-skill", type: "수행평가", title: "핸드볼 기능", period: "2학기", weight: 30 },
+      { id: "handball-game", type: "수행평가", title: "핸드볼 경기", period: "2학기", weight: 20 },
     ],
   },
   {
@@ -836,8 +836,8 @@ const busanDaesinSubjects: Subject[] = [
     name: "음악",
     color: "bg-violet-500",
     assessments: [
-      { id: "instrument", type: "수행평가", title: "기악(기타연주하기)", period: "2학기", weight: 50 },
-      { id: "singing", type: "수행평가", title: "가창(뮤지컬넘버부르기)", period: "2학기", weight: 50 },
+      { id: "instrument", type: "수행평가", title: "기악(기타 연주하기)", period: "2학기", weight: 50 },
+      { id: "singing", type: "수행평가", title: "가창(뮤지컬 넘버 부르기)", period: "2학기", weight: 50 },
     ],
   },
   {
@@ -845,8 +845,8 @@ const busanDaesinSubjects: Subject[] = [
     name: "미술",
     color: "bg-fuchsia-500",
     assessments: [
-      { id: "goods", type: "수행평가", title: "굿즈디자인", period: "2학기", weight: 50 },
-      { id: "ceramic", type: "수행평가", title: "도자기도안제작", period: "2학기", weight: 50 },
+      { id: "goods", type: "수행평가", title: "굿즈 디자인", period: "2학기", weight: 50 },
+      { id: "ceramic", type: "수행평가", title: "도자기 도안 제작", period: "2학기", weight: 50 },
     ],
   },
   {
@@ -854,8 +854,8 @@ const busanDaesinSubjects: Subject[] = [
     name: "일본어",
     color: "bg-red-500",
     assessments: [
-      { id: "portfolio", type: "수행평가", title: "일본어기초포트폴리오", period: "2학기", weight: 50 },
-      { id: "project", type: "수행평가", title: "일본어성장프로젝트", period: "2학기", weight: 50 },
+      { id: "portfolio", type: "수행평가", title: "일본어 기초 포트폴리오", period: "2학기", weight: 50 },
+      { id: "project", type: "수행평가", title: "일본어 성장 프로젝트", period: "2학기", weight: 50 },
     ],
   },
   {
@@ -863,8 +863,8 @@ const busanDaesinSubjects: Subject[] = [
     name: "중국어",
     color: "bg-lime-500",
     assessments: [
-      { id: "vocabulary", type: "수행평가", title: "중국어단어성장프로젝트", period: "2학기", weight: 50 },
-      { id: "culture", type: "수행평가", title: "중국문화발표", period: "2학기", weight: 50 },
+      { id: "vocabulary", type: "수행평가", title: "중국어 단어 성장 프로젝트", period: "2학기", weight: 50 },
+      { id: "culture", type: "수행평가", title: "중국 문화 발표", period: "2학기", weight: 50 },
     ],
   },
   { id: "career", name: "진로", color: "bg-slate-400", assessments: [], passOnly: true },
@@ -1087,7 +1087,7 @@ export default function App() {
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("dark", theme === "dark");
-    root.style.colorScheme = theme;
+    root.style.colorScheme = `${theme} only`;
   }, [theme]);
 
   useEffect(() => {
@@ -1404,7 +1404,7 @@ export default function App() {
             </label>
 
             <button
-              className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-base font-extrabold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-base font-extrabold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none dark:shadow-none"
               disabled={!schoolChoice}
               type="submit"
             >

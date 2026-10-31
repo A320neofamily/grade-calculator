@@ -12,6 +12,14 @@
   text-rendering: optimizeLegibility;
 }
 
+:root:not(.dark) {
+  color-scheme: light only;
+}
+
+:root.dark {
+  color-scheme: dark only;
+}
+
 @layer base {
   body {
     min-width: 320px;
