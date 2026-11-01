@@ -738,6 +738,576 @@ const centumSubjects: Subject[] = [
   },
 ];
 
+const busanGirlsSubjects: Subject[] = [
+  {
+    id: "korean",
+    name: "국어",
+    color: "bg-rose-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "reading", type: "수행평가", title: "한 학기 한 권 읽기", period: "9~11월", weight: 20 },
+      { id: "conversation", type: "수행평가", title: "공감하고 조정하는 대화하기", period: "8~9월", weight: 10 },
+      {
+        id: "multimodal-writing",
+        type: "수행평가",
+        title: "복합양식 자료를 활용하여 글 쓰기",
+        period: "9~10월",
+        weight: 10,
+      },
+    ],
+  },
+  {
+    id: "ethics",
+    name: "도덕",
+    color: "bg-amber-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 40 },
+      { id: "ethical-issue", type: "수행평가", title: "윤리적 쟁점 탐구 보고서 작성하기", period: "9~10월", weight: 30 },
+      { id: "film-science", type: "수행평가", title: "영화로 과학 기술 성찰하기", period: "10~11월", weight: 30 },
+    ],
+  },
+  {
+    id: "history",
+    name: "역사",
+    color: "bg-orange-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      {
+        id: "french-revolution",
+        type: "수행평가",
+        title: "프랑스 혁명 속 여성의 목소리-연설문 작성하기",
+        period: "9~10월",
+        weight: 20,
+      },
+      {
+        id: "world-war",
+        type: "수행평가",
+        title: "세계 대전의 교훈을 담은 국제 평화 원칙 만들기",
+        period: "11~12월",
+        weight: 20,
+      },
+    ],
+  },
+  {
+    id: "math",
+    name: "수학",
+    color: "bg-indigo-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      {
+        id: "triangle-centers",
+        type: "수행평가",
+        title: "삼각형의 외심과 내심 프로젝트",
+        period: "8~9월",
+        weight: 20,
+      },
+      { id: "quadrilateral", type: "수행평가", title: "사각형 탐구하기", period: "9월", weight: 20 },
+    ],
+  },
+  {
+    id: "science",
+    name: "과학",
+    color: "bg-emerald-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      {
+        id: "photosynthesis",
+        type: "수행평가",
+        title: "식물의 광합성과 호흡의 관계 탐구",
+        period: "8월",
+        weight: 20,
+      },
+      { id: "heart", type: "수행평가", title: "심장의 혈액 이동 탐구", period: "9월", weight: 20 },
+    ],
+  },
+  {
+    id: "tech",
+    name: "기술·가정",
+    color: "bg-teal-500",
+    assessments: [
+      { id: "egg-car", type: "수행평가", title: "에그 카 크러시 프로젝트", period: "10월", weight: 50 },
+      { id: "construction", type: "수행평가", title: "건설 기술 프로젝트", period: "12월", weight: 50 },
+    ],
+  },
+  {
+    id: "english",
+    name: "영어",
+    color: "bg-blue-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "listening", type: "수행평가", title: "영어 듣기", period: "9월", weight: 10 },
+      { id: "reading", type: "수행평가", title: "영어 독서", period: "9월", weight: 15 },
+      { id: "speaking", type: "수행평가", title: "영어 말하기(원어민 인터뷰)", period: "11~12월", weight: 15 },
+    ],
+  },
+  {
+    id: "hanmun",
+    name: "한문",
+    color: "bg-red-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 40 },
+      { id: "holiday-card", type: "수행평가", title: "명절 카드 만들기", period: "9월", weight: 30 },
+      { id: "calendar", type: "수행평가", title: "절기 달력 제작하기", period: "9~10월", weight: 30 },
+    ],
+  },
+  {
+    id: "pe",
+    name: "체육",
+    color: "bg-cyan-500",
+    assessments: [
+      { id: "jegichagi", type: "수행평가", title: "제기차기", period: "9~10월", weight: 30 },
+      { id: "circuit", type: "수행평가", title: "서킷 트레이닝", period: "10~11월", weight: 30 },
+      { id: "soccer", type: "수행평가", title: "축구볼", period: "9~11월", weight: 40 },
+    ],
+  },
+  {
+    id: "music",
+    name: "음악",
+    color: "bg-violet-500",
+    assessments: [
+      { id: "singing", type: "수행평가", title: "가창", period: "9~10월", weight: 50 },
+      { id: "newspaper", type: "수행평가", title: "음악 신문 만들기", period: "10~11월", weight: 50 },
+    ],
+  },
+  {
+    id: "art",
+    name: "미술",
+    color: "bg-fuchsia-500",
+    assessments: [
+      { id: "munjado", type: "수행평가", title: "현대 문자도", period: "8~10월", weight: 50 },
+      { id: "instatoon", type: "수행평가", title: "인스타툰", period: "10~12월", weight: 50 },
+    ],
+  },
+  { id: "health", name: "보건", color: "bg-slate-400", assessments: [], passOnly: true },
+  {
+    id: "digital-self-directed",
+    name: "디지털 자기주도",
+    color: "bg-slate-400",
+    assessments: [],
+    passOnly: true,
+  },
+];
+
+const busanCentralGirlsSubjects: Subject[] = [
+  {
+    id: "korean",
+    name: "국어",
+    color: "bg-rose-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "reading", type: "수행평가", title: "한 학기 한 권 읽기", period: "9~11월", weight: 20 },
+      {
+        id: "reflection",
+        type: "수행평가",
+        title: "작품 속 인물과 대화하며 삶 성찰",
+        period: "9~10월",
+        weight: 20,
+      },
+    ],
+  },
+  {
+    id: "ethics",
+    name: "도덕",
+    color: "bg-amber-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 40 },
+      { id: "justice", type: "수행평가", title: "정의로운 사회의 실현", period: "9월", weight: 30 },
+      {
+        id: "media-ethics",
+        type: "수행평가",
+        title: "정보 통신 매체를 활용한 바른 제작하기",
+        period: "10월",
+        weight: 30,
+      },
+    ],
+  },
+  {
+    id: "history",
+    name: "역사",
+    color: "bg-orange-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "four-panel", type: "수행평가", title: "사인펜 네 컷 만화 제작하기", period: "9월", weight: 20 },
+      { id: "imperialism", type: "수행평가", title: "제국주의 키워드 연표 작성하기", period: "11월", weight: 20 },
+    ],
+  },
+  {
+    id: "math",
+    name: "수학",
+    color: "bg-indigo-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      {
+        id: "geometry-life",
+        type: "수행평가",
+        title: "실생활 속 도형 성질 탐구하기",
+        period: "10월",
+        weight: 20,
+      },
+      { id: "geometry-summary", type: "수행평가", title: "도형의 다양한 성질 정리하기", period: "11월", weight: 20 },
+    ],
+  },
+  {
+    id: "science",
+    name: "과학",
+    color: "bg-emerald-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "circulation", type: "수행평가", title: "순환계의 구조와 기능 탐구 실험", period: "9~10월", weight: 20 },
+      { id: "energy", type: "수행평가", title: "전기와 에너지 전환 탐구", period: "11월", weight: 20 },
+    ],
+  },
+  {
+    id: "tech",
+    name: "기술·가정",
+    color: "bg-teal-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 40 },
+      {
+        id: "family-role",
+        type: "수행평가",
+        title: "행복한 가족관계를 위한 나의 역할 찾기",
+        period: "9월",
+        weight: 20,
+      },
+      { id: "car", type: "수행평가", title: "자동차 장치 만들기", period: "10~11월", weight: 40 },
+    ],
+  },
+  {
+    id: "english",
+    name: "영어",
+    color: "bg-blue-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "listening", type: "수행평가", title: "영어 듣기", period: "9월", weight: 10 },
+      { id: "speaking", type: "수행평가", title: "영어 말하기", period: "10~11월", weight: 15 },
+      { id: "review", type: "수행평가", title: "마음을 감동시킨 감상문 쓰기", period: "9월", weight: 15 },
+    ],
+  },
+  {
+    id: "hanmun",
+    name: "한문",
+    color: "bg-red-500",
+    assessments: [
+      { id: "characters", type: "수행평가", title: "한자 쓰기", period: "8~11월", weight: 30 },
+      { id: "career-writing", type: "수행평가", title: "진로 관련 한자 활용 글쓰기", period: "9월", weight: 30 },
+      { id: "reading", type: "수행평가", title: "한문 풀이", period: "11월", weight: 40 },
+    ],
+  },
+  {
+    id: "pe",
+    name: "체육",
+    color: "bg-cyan-500",
+    assessments: [
+      { id: "target", type: "수행평가", title: "표적 경기", period: "9월", weight: 50 },
+      { id: "jump-rope", type: "수행평가", title: "음악 줄넘기", period: "10월", weight: 50 },
+    ],
+  },
+  {
+    id: "music",
+    name: "음악",
+    color: "bg-violet-500",
+    assessments: [
+      { id: "dictionary", type: "수행평가", title: "악기 사전 제작", period: "9월", weight: 50 },
+      { id: "accompaniment", type: "수행평가", title: "나만의 반주 만들기", period: "11월", weight: 50 },
+    ],
+  },
+  {
+    id: "art",
+    name: "미술",
+    color: "bg-fuchsia-500",
+    assessments: [
+      { id: "goods", type: "수행평가", title: "굿즈 디자인", period: "8~9월", weight: 50 },
+      { id: "mask", type: "수행평가", title: "자화상 탈 디자인", period: "10~11월", weight: 50 },
+    ],
+  },
+  { id: "global-citizen", name: "세계시민교육", color: "bg-slate-400", assessments: [], passOnly: true },
+  { id: "climate", name: "기후변화와 우리", color: "bg-slate-400", assessments: [], passOnly: true },
+  { id: "mindfulness", name: "청소년 마음챙김", color: "bg-slate-400", assessments: [], passOnly: true },
+];
+
+const daesinGirlsSubjects: Subject[] = [
+  {
+    id: "korean",
+    name: "국어",
+    color: "bg-rose-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "reading", type: "수행평가", title: "한 학기 한 권 읽기", period: "2학기", weight: 20 },
+      { id: "self-directed", type: "수행평가", title: "자기주도학습 프로젝트", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "ethics",
+    name: "도덕",
+    color: "bg-amber-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 40 },
+      { id: "project", type: "수행평가", title: "프로젝트 활동", period: "2학기", weight: 30 },
+      { id: "classwork", type: "수행평가", title: "교과활동 평가", period: "2학기", weight: 30 },
+    ],
+  },
+  {
+    id: "history",
+    name: "역사",
+    color: "bg-orange-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "classwork", type: "수행평가", title: "교과활동 평가", period: "2학기", weight: 20 },
+      { id: "project", type: "수행평가", title: "프로젝트 활동", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "math",
+    name: "수학",
+    color: "bg-indigo-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "project", type: "수행평가", title: "프로젝트 활동", period: "2학기", weight: 20 },
+      { id: "formative", type: "수행평가", title: "교과활동 중 형성평가", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "science",
+    name: "과학",
+    color: "bg-emerald-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 25 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 25 },
+      { id: "experiment", type: "수행평가", title: "실험과정평가", period: "2학기", weight: 25 },
+      { id: "portfolio", type: "수행평가", title: "포트폴리오", period: "2학기", weight: 25 },
+    ],
+  },
+  {
+    id: "tech",
+    name: "기술·가정",
+    color: "bg-teal-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 40 },
+      { id: "portfolio", type: "수행평가", title: "포트폴리오", period: "2학기", weight: 30 },
+      { id: "project", type: "수행평가", title: "프로젝트 활동", period: "2학기", weight: 30 },
+    ],
+  },
+  {
+    id: "english",
+    name: "영어",
+    color: "bg-blue-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+      { id: "listening", type: "수행평가", title: "듣기평가", period: "2학기", weight: 10 },
+      { id: "speaking", type: "수행평가", title: "영어 말하기", period: "2학기", weight: 15 },
+      { id: "reading", type: "수행평가", title: "독서 포트폴리오", period: "2학기", weight: 15 },
+    ],
+  },
+  {
+    id: "japanese",
+    name: "일본어",
+    color: "bg-red-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 40 },
+      { id: "characters", type: "수행평가", title: "일본어 문자이해", period: "2학기", weight: 30 },
+      { id: "project", type: "수행평가", title: "과정형 프로젝트", period: "2학기", weight: 30 },
+    ],
+  },
+  {
+    id: "pe",
+    name: "체육",
+    color: "bg-cyan-500",
+    assessments: [
+      { id: "field", type: "수행평가", title: "필드형 스포츠", period: "2학기", weight: 50 },
+      { id: "environment", type: "수행평가", title: "생활환경형 스포츠", period: "2학기", weight: 50 },
+    ],
+  },
+  {
+    id: "music",
+    name: "음악",
+    color: "bg-violet-500",
+    assessments: [
+      { id: "performance", type: "수행평가", title: "연주", period: "2학기", weight: 50 },
+      { id: "appreciation", type: "수행평가", title: "감상", period: "2학기", weight: 50 },
+    ],
+  },
+  {
+    id: "art",
+    name: "미술",
+    color: "bg-fuchsia-500",
+    assessments: [
+      { id: "experience", type: "수행평가", title: "미적 체험", period: "2학기", weight: 50 },
+      { id: "expression", type: "수행평가", title: "표현", period: "2학기", weight: 50 },
+    ],
+  },
+];
+
+const chojangSubjects: Subject[] = [
+  {
+    id: "korean",
+    name: "국어",
+    color: "bg-rose-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "선택형 10% · 서답형 10%", weight: 20 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "선택형 10% · 서답형 10%", weight: 20 },
+      { id: "reading", type: "수행평가", title: "한 학기 한 권 읽기", period: "2학기", weight: 25 },
+      { id: "portfolio", type: "수행평가", title: "탐구활동 포트폴리오", period: "2학기", weight: 20 },
+      { id: "multimodal", type: "수행평가", title: "복합 양식 글쓰기 평가", period: "2학기", weight: 15 },
+    ],
+  },
+  {
+    id: "ethics",
+    name: "도덕",
+    color: "bg-amber-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "선택형 40%", weight: 40 },
+      { id: "justice", type: "수행평가", title: "사회 정의 실현 방안 찾기", period: "2학기", weight: 30 },
+      { id: "moral-problem", type: "수행평가", title: "사회적 도덕 문제 해결 방안 찾기", period: "2학기", weight: 30 },
+    ],
+  },
+  {
+    id: "history",
+    name: "역사",
+    color: "bg-orange-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "선택형 18% · 서답형 12%", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "선택형 18% · 서답형 12%", weight: 30 },
+      { id: "world-history", type: "수행평가", title: "세계사 생각 글쓰기", period: "2학기", weight: 20 },
+      { id: "interview", type: "수행평가", title: "역사 인물 인터뷰", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "math",
+    name: "수학",
+    color: "bg-indigo-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "선택형 18% · 서답형 12%", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "선택형 18% · 서답형 12%", weight: 30 },
+      { id: "triangle", type: "수행평가", title: "삼각형 탐구활동", period: "2학기", weight: 20 },
+      { id: "quadrilateral", type: "수행평가", title: "사각형 탐구활동", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "science",
+    name: "과학",
+    color: "bg-emerald-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "선택형 18% · 서답형 12%", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "선택형 18% · 서답형 12%", weight: 30 },
+      { id: "nutrient", type: "수행평가", title: "영양소 검출 반응 실험", period: "2학기", weight: 20 },
+      {
+        id: "light",
+        type: "수행평가",
+        title: "광원으로부터의 거리에 따른 빛의 세기 실험",
+        period: "2학기",
+        weight: 20,
+      },
+    ],
+  },
+  {
+    id: "tech",
+    name: "기술·가정",
+    color: "bg-teal-500",
+    assessments: [
+      { id: "final", type: "지필평가", title: "기말고사", period: "선택형 40%", weight: 40 },
+      { id: "floor-plan", type: "수행평가", title: "주택 평면 설계하기", period: "2학기", weight: 40 },
+      { id: "typography", type: "수행평가", title: "타이포그래피", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "english",
+    name: "영어",
+    color: "bg-blue-500",
+    assessments: [
+      { id: "midterm", type: "지필평가", title: "중간고사", period: "선택형 15% · 서답형 15%", weight: 30 },
+      { id: "final", type: "지필평가", title: "기말고사", period: "선택형 15% · 서답형 15%", weight: 30 },
+      { id: "listening", type: "수행평가", title: "듣기평가", period: "2학기", weight: 10 },
+      {
+        id: "conversation",
+        type: "수행평가",
+        title: "관심사와 경험 물어보고 답하기",
+        period: "2학기",
+        weight: 15,
+      },
+      { id: "vocabulary", type: "수행평가", title: "어휘 포트폴리오", period: "2학기", weight: 15 },
+    ],
+  },
+  {
+    id: "pe",
+    name: "체육",
+    color: "bg-cyan-500",
+    assessments: [
+      { id: "volleyball", type: "수행평가", title: "배구 언더핸드 및 오버핸드 리시브", period: "2학기", weight: 50 },
+      { id: "soccer", type: "수행평가", title: "축구 리프팅", period: "2학기", weight: 50 },
+    ],
+  },
+  {
+    id: "music",
+    name: "음악",
+    color: "bg-violet-500",
+    assessments: [
+      { id: "kalimba", type: "수행평가", title: "칼림바 연주", period: "2학기", weight: 70 },
+      { id: "portfolio", type: "수행평가", title: "연주 및 감상 포트폴리오", period: "2학기", weight: 30 },
+    ],
+  },
+  {
+    id: "art",
+    name: "미술",
+    color: "bg-fuchsia-500",
+    assessments: [
+      { id: "optical-art", type: "수행평가", title: "착시 아트", period: "2학기", weight: 40 },
+      { id: "wire-art", type: "수행평가", title: "저밀도 철조 조형 만들기", period: "2학기", weight: 40 },
+      { id: "magnet", type: "수행평가", title: "토형 모양 마그넷 만들기", period: "2학기", weight: 20 },
+    ],
+  },
+  {
+    id: "life-japanese",
+    name: "생활일본어",
+    color: "bg-red-500",
+    assessments: [
+      { id: "ordering", type: "수행평가", title: "일본문화 메뉴 주문하기", period: "2학기", weight: 50 },
+      { id: "tourism", type: "수행평가", title: "일본 관광지 소개자료 만들기", period: "2학기", weight: 50 },
+    ],
+  },
+  {
+    id: "life-chinese",
+    name: "생활중국어",
+    color: "bg-lime-500",
+    assessments: [
+      { id: "hobby", type: "수행평가", title: "취미 소개와 인사말 하기", period: "2학기", weight: 50 },
+      { id: "sentences", type: "수행평가", title: "문장 완성하여 쓰기", period: "2학기", weight: 50 },
+    ],
+  },
+  {
+    id: "life-spanish",
+    name: "생활스페인어",
+    color: "bg-orange-400",
+    assessments: [
+      { id: "friend", type: "수행평가", title: "친구 소개 글쓰기", period: "2학기", weight: 50 },
+      { id: "hand-mark", type: "수행평가", title: "핸드마크 소개하기", period: "2학기", weight: 50 },
+    ],
+  },
+  {
+    id: "health",
+    name: "보건",
+    color: "bg-pink-500",
+    assessments: [
+      { id: "cpr", type: "수행평가", title: "심폐소생술 및 자동심장충격기 실습", period: "2학기", weight: 50 },
+      { id: "infection", type: "수행평가", title: "유행성 감염병 발표", period: "2학기", weight: 50 },
+    ],
+  },
+];
+
 const busanDaesinSubjects: Subject[] = [
   {
     id: "korean",
@@ -879,7 +1449,10 @@ const SUBJECT_ORDER = [
   "social",
   "history",
   "japanese",
+  "life-japanese",
   "chinese",
+  "life-chinese",
+  "life-spanish",
   "hanmun",
   "tech",
   "information",
@@ -887,6 +1460,7 @@ const SUBJECT_ORDER = [
   "music",
   "art",
   "pe",
+  "health",
 ];
 
 function orderSubjects(subjects: Subject[]) {
@@ -935,6 +1509,13 @@ const schools = [
     subjects: orderSubjects(geojeSubjects),
   },
   {
+    id: "daesin-girls",
+    name: "대신여자중학교",
+    shortName: "대신여중",
+    storageKey: "semester-score-calculator-daesin-girls",
+    subjects: orderSubjects(daesinGirlsSubjects),
+  },
+  {
     id: "manduk",
     name: "만덕중학교",
     shortName: "만덕중",
@@ -949,6 +1530,20 @@ const schools = [
     subjects: orderSubjects(busanDaesinSubjects),
   },
   {
+    id: "busan-girls",
+    name: "부산여자중학교",
+    shortName: "부산여중",
+    storageKey: "semester-score-calculator-busan-girls",
+    subjects: orderSubjects(busanGirlsSubjects),
+  },
+  {
+    id: "busan-central-girls",
+    name: "부산중앙여자중학교",
+    shortName: "부산중앙여중",
+    storageKey: "semester-score-calculator-busan-central-girls",
+    subjects: orderSubjects(busanCentralGirlsSubjects),
+  },
+  {
     id: "buheung",
     name: "부흥중학교",
     shortName: "부흥중",
@@ -961,6 +1556,13 @@ const schools = [
     shortName: "센텀중",
     storageKey: "semester-score-calculator-centum",
     subjects: orderSubjects(centumSubjects),
+  },
+  {
+    id: "chojang",
+    name: "초장중학교",
+    shortName: "초장중",
+    storageKey: "semester-score-calculator-chojang",
+    subjects: orderSubjects(chojangSubjects),
   },
 ] as const satisfies readonly School[];
 
