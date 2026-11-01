@@ -905,44 +905,82 @@ function orderSubjects(subjects: Subject[]) {
     .map(({ subject }) => subject);
 }
 
-const orderedMandukSubjects = orderSubjects(mandukSubjects);
-const orderedGeojeSubjects = orderSubjects(geojeSubjects);
-const orderedBuheungSubjects = orderSubjects(buheungSubjects);
-const orderedGaegeumSubjects = orderSubjects(gaegeumSubjects);
-const orderedCentumSubjects = orderSubjects(centumSubjects);
-const orderedBusanDaesinSubjects = orderSubjects(busanDaesinSubjects);
-
-const STORAGE_KEY = "semester-score-calculator";
-const GEOJE_STORAGE_KEY = "semester-score-calculator-geoje-girls";
-const BUHEUNG_STORAGE_KEY = "semester-score-calculator-buheung";
-const GAEGEUM_STORAGE_KEY = "semester-score-calculator-gaegeum-girls";
-const CENTUM_STORAGE_KEY = "semester-score-calculator-centum";
-const BUSAN_DAESIN_STORAGE_KEY = "semester-score-calculator-busan-daesin";
-const SCHOOL_STORAGE_KEYS = {
-  manduk: STORAGE_KEY,
-  "geoje-girls": GEOJE_STORAGE_KEY,
-  buheung: BUHEUNG_STORAGE_KEY,
-  "gaegeum-girls": GAEGEUM_STORAGE_KEY,
-  centum: CENTUM_STORAGE_KEY,
-  "busan-daesin": BUSAN_DAESIN_STORAGE_KEY,
-} as const;
 const THREE_LEVEL_SUBJECT_IDS = new Set(["pe", "music", "art"]);
-const schools = [
-  { id: "gaegeum-girls", name: "개금여자중학교", shortName: "개금여중" },
-  { id: "geoje-girls", name: "거제여자중학교", shortName: "거제여중" },
-  { id: "manduk", name: "만덕중학교", shortName: "만덕중" },
-  { id: "busan-daesin", name: "부산대신중학교", shortName: "부산대신중" },
-  { id: "buheung", name: "부흥중학교", shortName: "부흥중" },
-  { id: "centum", name: "센텀중학교", shortName: "센텀중" },
-] as const;
 
-function getSubjects(schoolId: (typeof schools)[number]["id"]) {
-  if (schoolId === "geoje-girls") return orderedGeojeSubjects;
-  if (schoolId === "buheung") return orderedBuheungSubjects;
-  if (schoolId === "gaegeum-girls") return orderedGaegeumSubjects;
-  if (schoolId === "centum") return orderedCentumSubjects;
-  if (schoolId === "busan-daesin") return orderedBusanDaesinSubjects;
-  return orderedMandukSubjects;
+type School = {
+  id: string;
+  name: string;
+  shortName: string;
+  /** localStorage key. 배포 후에는 바꾸지 마세요. 바꾸면 기존 사용자의 저장된 점수를 읽지 못합니다. */
+  storageKey: string;
+  subjects: Subject[];
+};
+
+// 학교 목록(드롭다운 순서)의 단일 출처입니다.
+// 학교를 추가하려면 위에 과목 배열을 만들고, 여기에 항목 하나만 추가하면 됩니다.
+// 점수 저장·불러오기·클라우드 동기화·화면 선택지는 모두 이 배열에서 만들어집니다.
+const schools = [
+  {
+    id: "gaegeum-girls",
+    name: "개금여자중학교",
+    shortName: "개금여중",
+    storageKey: "semester-score-calculator-gaegeum-girls",
+    subjects: orderSubjects(gaegeumSubjects),
+  },
+  {
+    id: "geoje-girls",
+    name: "거제여자중학교",
+    shortName: "거제여중",
+    storageKey: "semester-score-calculator-geoje-girls",
+    subjects: orderSubjects(geojeSubjects),
+  },
+  {
+    id: "manduk",
+    name: "만덕중학교",
+    shortName: "만덕중",
+    storageKey: "semester-score-calculator",
+    subjects: orderSubjects(mandukSubjects),
+  },
+  {
+    id: "busan-daesin",
+    name: "부산대신중학교",
+    shortName: "부산대신중",
+    storageKey: "semester-score-calculator-busan-daesin",
+    subjects: orderSubjects(busanDaesinSubjects),
+  },
+  {
+    id: "buheung",
+    name: "부흥중학교",
+    shortName: "부흥중",
+    storageKey: "semester-score-calculator-buheung",
+    subjects: orderSubjects(buheungSubjects),
+  },
+  {
+    id: "centum",
+    name: "센텀중학교",
+    shortName: "센텀중",
+    storageKey: "semester-score-calculator-centum",
+    subjects: orderSubjects(centumSubjects),
+  },
+] as const satisfies readonly School[];
+
+type SchoolId = (typeof schools)[number]["id"];
+
+const schoolsById = Object.fromEntries(schools.map((school) => [school.id, school])) as Record<
+  SchoolId,
+  (typeof schools)[number]
+>;
+
+function getSubjects(schoolId: SchoolId) {
+  return schoolsById[schoolId].subjects;
+}
+
+function readStoredScores(storageKey: string): Scores {
+  try {
+    return JSON.parse(localStorage.getItem(storageKey) || "{}");
+  } catch {
+    return {};
+  }
 }
 
 function scoreKey(subjectId: string, assessmentId: string) {
@@ -1055,28 +1093,16 @@ export default function App() {
     if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
-  const [schoolChoice, setSchoolChoice] = useState<(typeof schools)[number]["id"] | "">("");
-  const [activeSchoolId, setActiveSchoolId] = useState<(typeof schools)[number]["id"] | null>(null);
-  const [activeSubjectId, setActiveSubjectId] = useState(mandukSubjects[0].id);
-  const [scoresBySchool, setScoresBySchool] = useState<
-    Record<(typeof schools)[number]["id"], Scores>
-  >(() => {
-    const readScores = (key: string) => {
-      try {
-        return JSON.parse(localStorage.getItem(key) || "{}");
-      } catch {
-        return {};
-      }
-    };
-    return {
-      manduk: readScores(STORAGE_KEY),
-      "geoje-girls": readScores(GEOJE_STORAGE_KEY),
-      buheung: readScores(BUHEUNG_STORAGE_KEY),
-      "gaegeum-girls": readScores(GAEGEUM_STORAGE_KEY),
-      centum: readScores(CENTUM_STORAGE_KEY),
-      "busan-daesin": readScores(BUSAN_DAESIN_STORAGE_KEY),
-    };
-  });
+  const [schoolChoice, setSchoolChoice] = useState<SchoolId | "">("");
+  const [activeSchoolId, setActiveSchoolId] = useState<SchoolId | null>(null);
+  const [activeSubjectId, setActiveSubjectId] = useState<string>(schools[0].subjects[0].id);
+  const [scoresBySchool, setScoresBySchool] = useState<Record<SchoolId, Scores>>(
+    () =>
+      Object.fromEntries(schools.map((school) => [school.id, readStoredScores(school.storageKey)])) as Record<
+        SchoolId,
+        Scores
+      >,
+  );
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"local" | "loading" | "saving" | "synced" | "error">("local");
@@ -1105,8 +1131,8 @@ export default function App() {
 
   useEffect(() => {
     scoresRef.current = scoresBySchool;
-    Object.entries(SCHOOL_STORAGE_KEYS).forEach(([schoolId, storageKey]) => {
-      localStorage.setItem(storageKey, JSON.stringify(scoresBySchool[schoolId as keyof typeof SCHOOL_STORAGE_KEYS]));
+    schools.forEach((school) => {
+      localStorage.setItem(school.storageKey, JSON.stringify(scoresBySchool[school.id]));
     });
 
     const syncUserId = syncUserIdRef.current;
@@ -1155,15 +1181,12 @@ export default function App() {
         // Cloud values win on conflicts; local-only values are retained and uploaded.
         const localData = scoresRef.current;
         const mergedData = Object.fromEntries(
-          Object.keys(SCHOOL_STORAGE_KEYS).map((schoolId) => [
-            schoolId,
-            { ...(localData[schoolId] || {}), ...(cloudData?.[schoolId] || {}) },
-          ]),
+          schools.map(({ id }) => [id, { ...(localData[id] || {}), ...(cloudData?.[id] || {}) }]),
         ) as UserData;
 
         scoresRef.current = mergedData;
         syncUserIdRef.current = nextUser.uid;
-        setScoresBySchool(mergedData as Record<keyof typeof SCHOOL_STORAGE_KEYS, Scores>);
+        setScoresBySchool(mergedData as Record<SchoolId, Scores>);
         setSyncStatus("synced");
       } catch {
         if (generation === authGeneration) setSyncStatus("error");
@@ -1384,7 +1407,7 @@ export default function App() {
                     schoolChoice ? "text-slate-900 dark:text-white" : "text-slate-400"
                   }`}
                   onChange={(event) =>
-                    setSchoolChoice(event.target.value as (typeof schools)[number]["id"] | "")
+                    setSchoolChoice(event.target.value as SchoolId | "")
                   }
                   value={schoolChoice}
                 >
