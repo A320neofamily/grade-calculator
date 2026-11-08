@@ -24,6 +24,10 @@ type Subject = {
 
 type Scores = Record<string, string>;
 
+type CustomSchool = School & {
+  custom: true;
+};
+
 const mandukSubjects: Subject[] = [
   {
     id: "korean",
@@ -1566,15 +1570,56 @@ const schools = [
   },
 ] as const satisfies readonly School[];
 
-type SchoolId = (typeof schools)[number]["id"];
+type SchoolId = string;
 
-const schoolsById = Object.fromEntries(schools.map((school) => [school.id, school])) as Record<
-  SchoolId,
-  (typeof schools)[number]
->;
+const CUSTOM_SCHOOLS_KEY = "__customSchools";
+const CUSTOM_SUBJECT_COLORS = [
+  "bg-rose-500",
+  "bg-indigo-500",
+  "bg-emerald-500",
+  "bg-blue-500",
+  "bg-amber-500",
+  "bg-violet-500",
+  "bg-cyan-500",
+  "bg-fuchsia-500",
+];
 
-function getSubjects(schoolId: SchoolId) {
-  return schoolsById[schoolId].subjects;
+function readCustomSchools(data: UserData | null): CustomSchool[] {
+  try {
+    const parsed = JSON.parse(data?.[CUSTOM_SCHOOLS_KEY]?.data || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (school): school is CustomSchool =>
+        typeof school?.id === "string" &&
+        typeof school?.name === "string" &&
+        typeof school?.shortName === "string" &&
+        Array.isArray(school?.subjects),
+    );
+  } catch {
+    return [];
+  }
+}
+
+function createCustomSchool(name: string, subjectNames: string[]): CustomSchool {
+  const id = `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  return {
+    id,
+    name,
+    shortName: name.replace(/학교$/, ""),
+    storageKey: "",
+    custom: true,
+    subjects: subjectNames.map((subjectName, index) => ({
+      id: `subject-${index + 1}`,
+      name: subjectName,
+      color: CUSTOM_SUBJECT_COLORS[index % CUSTOM_SUBJECT_COLORS.length],
+      assessments: [
+        { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+        { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+        { id: "performance-1", type: "수행평가", title: "수행평가 1", period: "2학기", weight: 20 },
+        { id: "performance-2", type: "수행평가", title: "수행평가 2", period: "2학기", weight: 20 },
+      ],
+    })),
+  };
 }
 
 function readStoredScores(storageKey: string): Scores {
@@ -1698,17 +1743,18 @@ export default function App() {
   const [schoolChoice, setSchoolChoice] = useState<SchoolId | "">("");
   const [activeSchoolId, setActiveSchoolId] = useState<SchoolId | null>(null);
   const [activeSubjectId, setActiveSubjectId] = useState<string>(schools[0].subjects[0].id);
-  const [scoresBySchool, setScoresBySchool] = useState<Record<SchoolId, Scores>>(
-    () =>
-      Object.fromEntries(schools.map((school) => [school.id, readStoredScores(school.storageKey)])) as Record<
-        SchoolId,
-        Scores
-      >,
+  const [scoresBySchool, setScoresBySchool] = useState<Record<string, Scores>>(
+    () => Object.fromEntries(schools.map((school) => [school.id, readStoredScores(school.storageKey)])),
   );
+  const [customSchools, setCustomSchools] = useState<CustomSchool[]>([]);
+  const [showAddSchool, setShowAddSchool] = useState(false);
+  const [newSchoolName, setNewSchoolName] = useState("");
+  const [newSchoolSubjects, setNewSchoolSubjects] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"local" | "loading" | "saving" | "synced" | "error">("local");
-  const scoresRef = useRef<UserData>(scoresBySchool);
+  const scoresRef = useRef<Record<string, Scores>>(scoresBySchool);
+  const customSchoolsRef = useRef(customSchools);
   const syncUserIdRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveQueueRef = useRef(Promise.resolve());
@@ -1733,6 +1779,7 @@ export default function App() {
 
   useEffect(() => {
     scoresRef.current = scoresBySchool;
+    customSchoolsRef.current = customSchools;
     schools.forEach((school) => {
       localStorage.setItem(school.storageKey, JSON.stringify(scoresBySchool[school.id]));
     });
@@ -1742,7 +1789,10 @@ export default function App() {
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      const dataToSave = scoresRef.current;
+      const dataToSave: UserData = {
+        ...scoresRef.current,
+        [CUSTOM_SCHOOLS_KEY]: { data: JSON.stringify(customSchoolsRef.current) },
+      };
       setSyncStatus("saving");
       saveQueueRef.current = saveQueueRef.current
         .catch(() => undefined)
@@ -1759,7 +1809,7 @@ export default function App() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [scoresBySchool]);
+  }, [scoresBySchool, customSchools]);
 
   useEffect(() => {
     let authGeneration = 0;
@@ -1771,6 +1821,16 @@ export default function App() {
       setAuthReady(true);
 
       if (!nextUser) {
+        const customIds = new Set(customSchoolsRef.current.map(({ id }) => id));
+        const localScores = Object.fromEntries(
+          Object.entries(scoresRef.current).filter(([id]) => !customIds.has(id)),
+        );
+        customSchoolsRef.current = [];
+        scoresRef.current = localScores;
+        setCustomSchools([]);
+        setScoresBySchool(localScores);
+        setSchoolChoice((current) => (customIds.has(current) ? "" : current));
+        setActiveSchoolId((current) => (current && customIds.has(current) ? null : current));
         setSyncStatus("local");
         return;
       }
@@ -1782,13 +1842,17 @@ export default function App() {
 
         // Cloud values win on conflicts; local-only values are retained and uploaded.
         const localData = scoresRef.current;
+        const cloudCustomSchools = readCustomSchools(cloudData);
+        const schoolIds = [...schools.map(({ id }) => id), ...cloudCustomSchools.map(({ id }) => id)];
         const mergedData = Object.fromEntries(
-          schools.map(({ id }) => [id, { ...(localData[id] || {}), ...(cloudData?.[id] || {}) }]),
-        ) as UserData;
+          schoolIds.map((id) => [id, { ...(localData[id] || {}), ...(cloudData?.[id] || {}) }]),
+        ) as Record<string, Scores>;
 
         scoresRef.current = mergedData;
+        customSchoolsRef.current = cloudCustomSchools;
         syncUserIdRef.current = nextUser.uid;
-        setScoresBySchool(mergedData as Record<SchoolId, Scores>);
+        setCustomSchools(cloudCustomSchools);
+        setScoresBySchool(mergedData);
         setSyncStatus("synced");
       } catch {
         if (generation === authGeneration) setSyncStatus("error");
@@ -1821,6 +1885,45 @@ export default function App() {
       localStorage.setItem("grade-calculator-theme", nextTheme);
       return nextTheme;
     });
+  }
+
+  const allSchools = useMemo(
+    () => [...schools, ...customSchools].sort((a, b) => a.name.localeCompare(b.name, "ko")),
+    [customSchools],
+  );
+  const schoolsById = useMemo(
+    () => Object.fromEntries(allSchools.map((school) => [school.id, school])) as Record<string, School>,
+    [allSchools],
+  );
+
+  function addCustomSchool() {
+    if (!user) return;
+    const name = newSchoolName.trim();
+    const subjectNames = [...new Set(newSchoolSubjects.split(/[,،\n]/).map((item) => item.trim()).filter(Boolean))];
+    if (!name || subjectNames.length === 0) return;
+    if (allSchools.some((school) => school.name === name)) {
+      window.alert("이미 같은 이름의 학교가 있습니다.");
+      return;
+    }
+    const newSchool = createCustomSchool(name, subjectNames);
+    setCustomSchools((current) => [...current, newSchool]);
+    setScoresBySchool((current) => ({ ...current, [newSchool.id]: {} }));
+    setSchoolChoice(newSchool.id);
+    setNewSchoolName("");
+    setNewSchoolSubjects("");
+    setShowAddSchool(false);
+  }
+
+  function removeCustomSchool(school: CustomSchool) {
+    if (!window.confirm(`${school.name}와 입력한 점수를 삭제할까요?`)) return;
+    setCustomSchools((current) => current.filter(({ id }) => id !== school.id));
+    setScoresBySchool((current) => {
+      const next = { ...current };
+      delete next[school.id];
+      return next;
+    });
+    if (schoolChoice === school.id) setSchoolChoice("");
+    if (activeSchoolId === school.id) setActiveSchoolId(null);
   }
 
   const themeControl = (
@@ -1873,8 +1976,8 @@ export default function App() {
   );
 
   const dataSchoolId = activeSchoolId || schoolChoice || schools[0].id;
-  const subjects = getSubjects(dataSchoolId);
-  const scores = scoresBySchool[dataSchoolId];
+  const subjects = schoolsById[dataSchoolId]?.subjects || schools[0].subjects;
+  const scores = scoresBySchool[dataSchoolId] || {};
   const setScores = (update: Scores | ((current: Scores) => Scores)) => {
     setScoresBySchool((current) => {
       const currentScores = current[dataSchoolId];
@@ -1967,14 +2070,14 @@ export default function App() {
     }
   }
 
-  const activeSchool = schools.find((school) => school.id === activeSchoolId);
+  const activeSchool = allSchools.find((school) => school.id === activeSchoolId);
 
   if (!activeSchool) {
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-100 px-5 py-12 text-slate-950 transition-colors dark:bg-slate-950 dark:text-white">
         <div className="absolute right-5 top-5 z-10 sm:right-8 sm:top-8">{themeControl}</div>
-        <div className="absolute -left-24 top-16 size-72 rounded-full bg-indigo-500/15 blur-3xl dark:bg-indigo-600/20" />
-        <div className="absolute -right-20 bottom-8 size-80 rounded-full bg-violet-400/15 blur-3xl dark:bg-violet-500/15" />
+        <div className="absolute -left-24 top-16 size-72 rounded-full bg-indigo-500/15 blur-3xl dark:hidden" />
+        <div className="absolute -right-20 bottom-8 size-80 rounded-full bg-violet-400/15 blur-3xl dark:hidden" />
         <main className="relative w-full max-w-lg">
           <div className="mb-8 text-center">
             <div
@@ -1997,7 +2100,7 @@ export default function App() {
             onSubmit={(event) => {
               event.preventDefault();
               if (!schoolChoice) return;
-              setActiveSubjectId(getSubjects(schoolChoice)[0].id);
+              setActiveSubjectId(schoolsById[schoolChoice].subjects[0].id);
               setActiveSchoolId(schoolChoice);
             }}
           >
@@ -2016,9 +2119,9 @@ export default function App() {
                   <option disabled value="">
                     학교를 선택하세요
                   </option>
-                  {schools.map((school) => (
+                  {allSchools.map((school) => (
                     <option key={school.id} value={school.id}>
-                      {school.name}
+                      {school.name} {"custom" in school ? "· 내 학교" : ""}
                     </option>
                   ))}
                 </select>
@@ -2037,6 +2140,98 @@ export default function App() {
               원점수 계산기 열기
               <Icon name="arrow" className="size-5" />
             </button>
+
+            <div className="mt-5 border-t border-slate-100 pt-5 dark:border-slate-800">
+              {user ? (
+                showAddSchool ? (
+                  <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/70">
+                    <div className="mb-4">
+                      <h2 className="font-extrabold">내 학교 추가</h2>
+                      <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                        추가한 학교와 점수는 로그인한 계정의 userdata에 저장됩니다.
+                      </p>
+                    </div>
+                    <label className="block">
+                      <span className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">학교 이름</span>
+                      <input
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:focus:ring-indigo-900/50"
+                        maxLength={40}
+                        onChange={(event) => setNewSchoolName(event.target.value)}
+                        placeholder="예: 우리중학교"
+                        value={newSchoolName}
+                      />
+                    </label>
+                    <label className="mt-3 block">
+                      <span className="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">과목</span>
+                      <textarea
+                        className="min-h-20 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:focus:ring-indigo-900/50"
+                        maxLength={200}
+                        onChange={(event) => setNewSchoolSubjects(event.target.value)}
+                        placeholder="국어, 수학, 과학, 영어"
+                        value={newSchoolSubjects}
+                      />
+                      <span className="mt-1.5 block text-[11px] leading-4 text-slate-400">
+                        쉼표로 구분해 입력하세요. 과목마다 중간 30%·기말 30%·수행 20%×2가 생성됩니다.
+                      </span>
+                    </label>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <button
+                        className="h-10 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-700"
+                        onClick={() => setShowAddSchool(false)}
+                        type="button"
+                      >
+                        취소
+                      </button>
+                      <button
+                        className="h-10 rounded-xl bg-indigo-600 text-sm font-extrabold text-white transition hover:bg-indigo-700 disabled:bg-slate-300"
+                        disabled={!newSchoolName.trim() || !newSchoolSubjects.trim()}
+                        onClick={addCustomSchool}
+                        type="button"
+                      >
+                        추가하기
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-300 bg-indigo-50/60 px-4 py-3 text-sm font-extrabold text-indigo-700 transition hover:border-indigo-400 hover:bg-indigo-50 dark:border-indigo-500/50 dark:bg-indigo-500/10 dark:text-[#aab2cc]"
+                    onClick={() => setShowAddSchool(true)}
+                    type="button"
+                  >
+                    <span className="text-lg leading-none">+</span>
+                    내 학교 추가하기
+                  </button>
+                )
+              ) : (
+                <button
+                  className="w-full rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm font-bold text-slate-500 transition hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-400"
+                  onClick={handleSignIn}
+                  type="button"
+                >
+                  로그인하고 내 학교 추가하기
+                </button>
+              )}
+              {user && customSchools.length > 0 && !showAddSchool && (
+                <div className="mt-3 space-y-2">
+                  {customSchools.map((school) => (
+                    <div
+                      className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800/70"
+                      key={school.id}
+                    >
+                      <span className="truncate font-bold text-slate-600 dark:text-slate-300">{school.name}</span>
+                      <button
+                        aria-label={`${school.name} 삭제`}
+                        className="ml-3 shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"
+                        onClick={() => removeCustomSchool(school)}
+                        type="button"
+                      >
+                        <Icon name="trash" className="size-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </form>
           <div className="mt-4">{authControl}</div>
           <div className="mt-2 text-center">

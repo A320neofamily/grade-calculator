@@ -1,0 +1,1591 @@
+status: exited
+stdout file: /tmp/figaro-3bb6dc1bf4ea4557/runtime/tool-output/3300/bash/3/stdout (197602 bytes)
+stderr file: /tmp/figaro-3bb6dc1bf4ea4557/runtime/tool-output/3300/bash/3/stderr (0 bytes)
+exit code: 0
+
+OUTPUT TRUNCATED: the head-and-tail previews below are INCOMPLETE; the middle is omitted. Complete output is saved at the stdout/stderr paths above. If your task depends on omitted content, you MUST use `read` on the relevant file and follow its continuation offsets through the required content before generating or changing code. Do not guess or infer omitted content from the preview. Reading with bash again can truncate again.
+
+--- stdout (head + tail; full output in file above) ---
+diff --git a/src/App.tsx b/src/App.tsx
+index 44fb9f9..69458e4 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -1,28 +1,32 @@
+-import { useEffect, useMemo, useRef, useState } from "react";
+-import type { User } from "firebase/auth";
+-import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+-import { auth, googleProvider } from "./firebase";
+-import { loadUserData, saveUserData, type UserData } from "./userDataApi";
+-import VisitorStats from "./VisitorStats";
+-import { version as appVersion } from "../package.json";
++import { useEffect, useMemo, useRef, useState } from "react"
++import type { User } from "firebase/auth"
++import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth"
++import { auth, googleProvider } from "./firebase"
++import { loadUserData, saveUserData, type UserData } from "./userDataApi"
++import VisitorStats from "./VisitorStats"
++import { version as appVersion } from "../package.json"
+ 
+ type Assessment = {
+-  id: string;
+-  type: "지필평가" | "수행평가";
+-  title: string;
+-  period: string;
+-  weight: number;
+-};
++  id: string
++  type: "지필평가" | "수행평가"
++  title: string
++  period: string
++  weight: number
++}
+ 
+ type Subject = {
+-  id: string;
+-  name: string;
+-  color: string;
+-  assessments: Assessment[];
+-  passOnly?: boolean;
+-};
++  id: string
++  name: string
++  color: string
++  assessments: Assessment[]
++  passOnly?: boolean
++}
+ 
+-type Scores = Record<string, string>;
++type Scores = Record<string, string>
++
++type CustomSchool = School & {
++  custom: true
++}
+ 
+ const mandukSubjects: Subject[] = [
+   {
+@@ -30,10 +34,34 @@ const mandukSubjects: Subject[] = [
+     name: "국어",
+     color: "bg-rose-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "10. 2.(금) · 4교시", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "12. 7.(월) · 2교시", weight: 30 },
+-      { id: "intro", type: "수행평가", title: "복합 양식 자료를 활용한 소개 글 쓰기", period: "9~10월", weight: 20 },
+-      { id: "reading", type: "수행평가", title: "한 학기 한 권 읽기 프로젝트", period: "11월", weight: 20 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "10. 2.(금) · 4교시",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "12. 7.(월) · 2교시",
++        weight: 30,
++      },
++      {
++        id: "intro",
++        type: "수행평가",
++        title: "복합 양식 자료를 활용한 소개 글 쓰기",
++        period: "9~10월",
++        weight: 20,
++      },
++      {
++        id: "reading",
++        type: "수행평가",
++        title: "한 학기 한 권 읽기 프로젝트",
++        period: "11월",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -41,8 +69,20 @@ const mandukSubjects: Subject[] = [
+     name: "도덕",
+     color: "bg-amber-500",
+     assessments: [
+-      { id: "metaverse", type: "수행평가", title: "가상공간 크리에이터 프로젝트", period: "10월", weight: 50 },
+-      { id: "newspaper", type: "수행평가", title: "통일 한국 신문 기획하기", period: "11월", weight: 50 },
++      {
++        id: "metaverse",
++        type: "수행평가",
++        title: "가상공간 크리에이터 프로젝트",
++        period: "10월",
++        weight: 50,
++      },
++      {
++        id: "newspaper",
++        type: "수행평가",
++        title: "통일 한국 신문 기획하기",
++        period: "11월",
++        weight: 50,
++      },
+     ],
+   },
+   {
+@@ -50,9 +90,27 @@ const mandukSubjects: Subject[] = [
+     name: "역사",
+     color: "bg-orange-500",
+     assessments: [
+-      { id: "final", type: "지필평가", title: "기말고사", period: "12. 8.(화) · 3교시", weight: 40 },
+-      { id: "revolution", type: "수행평가", title: "산업혁명 바로 알기 프로젝트", period: "10월", weight: 30 },
+-      { id: "china", type: "수행평가", title: "중국 근대화 운동 보고서", period: "10월", weight: 30 },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "12. 8.(화) · 3교시",
++        weight: 40,
++      },
++      {
++        id: "revolution",
++        type: "수행평가",
++        title: "산업혁명 바로 알기 프로젝트",
++        period: "10월",
++        weight: 30,
++      },
++      {
++        id: "china",
++        type: "수행평가",
++        title: "중국 근대화 운동 보고서",
++        period: "10월",
++        weight: 30,
++      },
+     ],
+   },
+   {
+@@ -60,10 +118,34 @@ const mandukSubjects: Subject[] = [
+     name: "수학",
+     color: "bg-indigo-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "10. 2.(금) · 2교시", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "12. 7.(월) · 4교시", weight: 30 },
+-      { id: "geometry", type: "수행평가", title: "도형 프로젝트", period: "9~11월", weight: 20 },
+-      { id: "essay", type: "수행평가", title: "수학 서술 챌린지", period: "9~12월", weight: 20 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "10. 2.(금) · 2교시",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "12. 7.(월) · 4교시",
++        weight: 30,
++      },
++      {
++        id: "geometry",
++        type: "수행평가",
++        title: "도형 프로젝트",
++        period: "9~11월",
++        weight: 20,
++      },
++      {
++        id: "essay",
++        type: "수행평가",
++        title: "수학 서술 챌린지",
++        period: "9~12월",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -71,10 +153,34 @@ const mandukSubjects: Subject[] = [
+     name: "과학",
+     color: "bg-emerald-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "10. 1.(목) · 2교시", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "12. 8.(화) · 4교시", weight: 30 },
+-      { id: "circulation", type: "수행평가", title: "순환계의 구조와 기능", period: "11월", weight: 20 },
+-      { id: "experiment", type: "수행평가", title: "몸의 법칙 실험", period: "11월", weight: 20 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "10. 1.(목) · 2교시",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "12. 8.(화) · 4교시",
++        weight: 30,
++      },
++      {
++        id: "circulation",
++        type: "수행평가",
++        title: "순환계의 구조와 기능",
++        period: "11월",
++        weight: 20,
++      },
++      {
++        id: "experiment",
++        type: "수행평가",
++        title: "몸의 법칙 실험",
++        period: "11월",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -82,9 +188,27 @@ const mandukSubjects: Subject[] = [
+     name: "기술·가정",
+     color: "bg-teal-500",
+     assessments: [
+-      { id: "construction", type: "수행평가", title: "건설기술 문제해결", period: "9~11월", weight: 50 },
+-      { id: "resource", type: "수행평가", title: "지속가능한 자원관리", period: "9~10월", weight: 30 },
+-      { id: "family", type: "수행평가", title: "건강한 가족관계", period: "11월", weight: 20 },
++      {
++        id: "construction",
++        type: "수행평가",
++        title: "건설기술 문제해결",
++        period: "9~11월",
++        weight: 50,
++      },
++      {
++        id: "resource",
++        type: "수행평가",
++        title: "지속가능한 자원관리",
++        period: "9~10월",
++        weight: 30,
++      },
++      {
++        id: "family",
++        type: "수행평가",
++        title: "건강한 가족관계",
++        period: "11월",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -92,11 +216,41 @@ const mandukSubjects: Subject[] = [
+     name: "영어",
+     color: "bg-blue-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "10. 1.(목) · 4교시", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "12. 8.(화) · 2교시", weight: 30 },
+-      { id: "listening", type: "수행평가", title: "영어듣기", period: "9월", weight: 10 },
+-      { id: "writing", type: "수행평가", title: "영어쓰기", period: "10~11월", weight: 15 },
+-      { id: "speaking", type: "수행평가", title: "영어말하기", period: "10~11월", weight: 15 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "10. 1.(목) · 4교시",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "12. 8.(화) · 2교시",
++        weight: 30,
++      },
++      {
++        id: "listening",
++        type: "수행평가",
++        title: "영어듣기",
++        period: "9월",
++        weight: 10,
++      },
++      {
++        id: "writing",
++        type: "수행평가",
++        title: "영어쓰기",
++        period: "10~11월",
++        weight: 15,
++      },
++      {
++        id: "speaking",
++        type: "수행평가",
++        title: "영어말하기",
++        period: "10~11월",
++        weight: 15,
++      },
+     ],
+   },
+   {
+@@ -104,9 +258,27 @@ const mandukSubjects: Subject[] = [
+     name: "일본어",
+     color: "bg-red-500",
+     assessments: [
+-      { id: "final", type: "지필평가", title: "기말고사", period: "12. 7.(월) · 3교시", weight: 40 },
+-      { id: "kana", type: "수행평가", title: "가타카나 받아쓰기", period: "9~10월", weight: 30 },
+-      { id: "conversation", type: "수행평가", title: "기초회화", period: "11월", weight: 30 },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "12. 7.(월) · 3교시",
++        weight: 40,
++      },
++      {
++        id: "kana",
++        type: "수행평가",
++        title: "가타카나 받아쓰기",
++        period: "9~10월",
++        weight: 30,
++      },
++      {
++        id: "conversation",
++        type: "수행평가",
++        title: "기초회화",
++        period: "11월",
++        weight: 30,
++      },
+     ],
+   },
+   {
+@@ -114,9 +286,27 @@ const mandukSubjects: Subject[] = [
+     name: "체육",
+     color: "bg-cyan-500",
+     assessments: [
+-      { id: "basketball1", type: "수행평가", title: "탁구", period: "9월", weight: 30 },
+-      { id: "volleyball1", type: "수행평가", title: "배구 Ⅰ", period: "11월", weight: 30 },
+-      { id: "volleyball2", type: "수행평가", title: "배구 Ⅱ", period: "11~12월", weight: 40 },
++      {
++        id: "basketball1",
++        type: "수행평가",
++        title: "탁구",
++        period: "9월",
++        weight: 30,
++      },
++      {
++        id: "volleyball1",
++        type: "수행평가",
++        title: "배구 Ⅰ",
++        period: "11월",
++        weight: 30,
++      },
++      {
++        id: "volleyball2",
++        type: "수행평가",
++        title: "배구 Ⅱ",
++        period: "11~12월",
++        weight: 40,
++      },
+     ],
+   },
+   {
+@@ -124,9 +314,27 @@ const mandukSubjects: Subject[] = [
+     name: "음악",
+     color: "bg-violet-500",
+     assessments: [
+-      { id: "piano", type: "수행평가", title: "피아노 코드 반주", period: "9월", weight: 40 },
+-      { id: "drum", type: "수행평가", title: "드럼 반주", period: "10월", weight: 30 },
+-      { id: "choir", type: "수행평가", title: "2부 합창", period: "11월", weight: 30 },
++      {
++        id: "piano",
++        type: "수행평가",
++        title: "피아노 코드 반주",
++        period: "9월",
++        weight: 40,
++      },
++      {
++        id: "drum",
++        type: "수행평가",
++        title: "드럼 반주",
++        period: "10월",
++        weight: 30,
++      },
++      {
++        id: "choir",
++        type: "수행평가",
++        title: "2부 합창",
++        period: "11월",
++        weight: 30,
++      },
+     ],
+   },
+   {
+@@ -134,11 +342,23 @@ const mandukSubjects: Subject[] = [
+     name: "미술",
+     color: "bg-fuchsia-500",
+     assessments: [
+-      { id: "dokdo", type: "수행평가", title: "독도 홍보 포스터", period: "8~10월", weight: 50 },
+-      { id: "unification", type: "수행평가", title: "통일 홍보 포스터", period: "10~12월", weight: 50 },
++      {
++        id: "dokdo",
++        type: "수행평가",
++        title: "독도 홍보 포스터",
++        period: "8~10월",
++        weight: 50,
++      },
++      {
++        id: "unification",
++        type: "수행평가",
++        title: "통일 홍보 포스터",
++        period: "10~12월",
++        weight: 50,
++      },
+     ],
+   },
+-];
++]
+ 
+ const geojeSubjects: Subject[] = [
+   {
+@@ -146,10 +366,34 @@ const geojeSubjects: Subject[] = [
+     name: "국어",
+     color: "bg-rose-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+-      { id: "reading", type: "수행평가", title: "한 학기 한 권 읽기", period: "2학기", weight: 20 },
+-      { id: "brochure", type: "수행평가", title: "한국 소개 소책자 만들기", period: "2학기", weight: 20 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "reading",
++        type: "수행평가",
++        title: "한 학기 한 권 읽기",
++        period: "2학기",
++        weight: 20,
++      },
++      {
++        id: "brochure",
++        type: "수행평가",
++        title: "한국 소개 소책자 만들기",
++        period: "2학기",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -157,10 +401,34 @@ const geojeSubjects: Subject[] = [
+     name: "역사",
+     color: "bg-orange-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+-      { id: "unification", type: "수행평가", title: "배움질문 포트폴리오", period: "2학기", weight: 20 },
+-      { id: "people", type: "수행평가", title: "역사 인물 탐구", period: "2학기", weight: 20 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "unification",
++        type: "수행평가",
++        title: "배움질문 포트폴리오",
++        period: "2학기",
++        weight: 20,
++      },
++      {
++        id: "people",
++        type: "수행평가",
++        title: "역사 인물 탐구",
++        period: "2학기",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -168,10 +436,34 @@ const geojeSubjects: Subject[] = [
+     name: "수학",
+     color: "bg-indigo-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+-      { id: "geometry1", type: "수행평가", title: "기하 프로젝트 Ⅰ", period: "2학기", weight: 20 },
+-      { id: "geometry2", type: "수행평가", title: "기하 프로젝트 Ⅱ", period: "2학기", weight: 20 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "geometry1",
++        type: "수행평가",
++        title: "기하 프로젝트 Ⅰ",
++        period: "2학기",
++        weight: 20,
++      },
++      {
++        id: "geometry2",
++        type: "수행평가",
++        title: "기하 프로젝트 Ⅱ",
++        period: "2학기",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -179,10 +471,34 @@ const geojeSubjects: Subject[] = [
+     name: "과학",
+     color: "bg-emerald-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+-      { id: "electric", type: "수행평가", title: "전자기 프로젝트", period: "2학기", weight: 20 },
+-      { id: "rock", type: "수행평가", title: "암석 파헤치기", period: "2학기", weight: 20 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "electric",
++        type: "수행평가",
++        title: "전자기 프로젝트",
++        period: "2학기",
++        weight: 20,
++      },
++      {
++        id: "rock",
++        type: "수행평가",
++        title: "암석 파헤치기",
++        period: "2학기",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -190,8 +506,20 @@ const geojeSubjects: Subject[] = [
+     name: "기술·가정",
+     color: "bg-teal-500",
+     assessments: [
+-      { id: "adaptation", type: "수행평가", title: "적응 유연성 프로젝트", period: "2학기", weight: 50 },
+-      { id: "construction", type: "수행평가", title: "건설기술 프로젝트", period: "2학기", weight: 50 },
++      {
++        id: "adaptation",
++        type: "수행평가",
++        title: "적응 유연성 프로젝트",
++        period: "2학기",
++        weight: 50,
++      },
++      {
++        id: "construction",
++        type: "수행평가",
++        title: "건설기술 프로젝트",
++        period: "2학기",
++        weight: 50,
++      },
+     ],
+   },
+   {
+@@ -199,7 +527,13 @@ const geojeSubjects: Subject[] = [
+     name: "정보",
+     color: "bg-sky-500",
+     assessments: [
+-      { id: "data", type: "수행평가", title: "실생활 데이터 분석 및 문제 해결", period: "2학기", weight: 50 },
++      {
++        id: "data",
++        type: "수행평가",
++        title: "실생활 데이터 분석 및 문제 해결",
++        period: "2학기",
++        weight: 50,
++      },
+       {
+         id: "system",
+         type: "수행평가",
+@@ -214,26 +548,62 @@ const geojeSubjects: Subject[] = [
+     name: "체육",
+     color: "bg-cyan-500",
+     assessments: [
+-      { id: "futsal", type: "수행평가", title: "풋살", period: "2학기", weight: 50 },
+-      { id: "cheerleading", type: "수행평가", title: "치어리딩", period: "2학기", weight: 50 },
+-    ],
+-  },
+-  {
+-    id: "music",
+-    name: "음악",
+-    color: "bg-violet-500",
+-    assessments: [
+-      { id: "folk-song", type: "수행평가", title: "민요 부르기", period: "2학기", weight: 50 },
+-      { id: "project", type: "수행평가", title: "음악사 프로젝트", period: "2학기", weight: 50 },
+-    ],
++      {
++        id: "futsal",
++        type: "수행평가",
++        title: "풋살",
++        period: "2학기",
++        weight: 50,
++      },
++      {
++        id: "cheerleading",
++        type: "수행평가",
++        title: "치어리딩",
++        period: "2학기",
++        weight: 50,
++      },
++    ],
++  },
++  {
++    id: "music",
++    name: "음악",
++    color: "bg-violet-500",
++    assessments: [
++      {
++        id: "folk-song",
++        type: "수행평가",
++        title: "민요 부르기",
++        period: "2학기",
++        weight: 50,
++      },
++      {
++        id: "project",
++        type: "수행평가",
++        title: "음악사 프로젝트",
++        period: "2학기",
++        weight: 50,
++      },
++    ],
+   },
+   {
+     id: "art",
+     name: "미술",
+     color: "bg-fuchsia-500",
+     assessments: [
+-      { id: "pattern", type: "수행평가", title: "나만의 모던 책거리", period: "2학기", weight: 50 },
+-      { id: "tshirt", type: "수행평가", title: "메시지를 디자인하다", period: "2학기", weight: 50 },
++      {
++        id: "pattern",
++        type: "수행평가",
++        title: "나만의 모던 책거리",
++        period: "2학기",
++        weight: 50,
++      },
++      {
++        id: "tshirt",
++        type: "수행평가",
++        title: "메시지를 디자인하다",
++        period: "2학기",
++        weight: 50,
++      },
+     ],
+   },
+   {
+@@ -241,11 +611,41 @@ const geojeSubjects: Subject[] = [
+     name: "영어",
+     color: "bg-blue-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "2학기", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 30 },
+-      { id: "listening", type: "수행평가", title: "영어듣기", period: "2학기", weight: 10 },
+-      { id: "speaking", type: "수행평가", title: "영어말하기", period: "2학기", weight: 10 },
+-      { id: "vocabulary", type: "수행평가", title: "어휘력 키우기", period: "2학기", weight: 20 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "2학기",
++        weight: 30,
++      },
++      {
++        id: "listening",
++        type: "수행평가",
++        title: "영어듣기",
++        period: "2학기",
++        weight: 10,
++      },
++      {
++        id: "speaking",
++        type: "수행평가",
++        title: "영어말하기",
++        period: "2학기",
++        weight: 10,
++      },
++      {
++        id: "vocabulary",
++        type: "수행평가",
++        title: "어휘력 키우기",
++        period: "2학기",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -253,9 +653,27 @@ const geojeSubjects: Subject[] = [
+     name: "일본어",
+     color: "bg-red-500",
+     assessments: [
+-      { id: "final", type: "지필평가", title: "기말고사", period: "2학기", weight: 50 },
+-      { id: "culture", type: "수행평가", title: "생활어휘력 형성평가", period: "2학기", weight: 25 },
+-      { id: "portfolio", type: "수행평가", title: "학습활동 포트폴리오", period: "2학기", weight: 25 },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "2학기",
++        weight: 50,
++      },
++      {
++        id: "culture",
++        type: "수행평가",
++        title: "생활어휘력 형성평가",
++        period: "2학기",
++        weight: 25,
++      },
++      {
++        id: "portfolio",
++        type: "수행평가",
++        title: "학습활동 포트폴리오",
++        period: "2학기",
++        weight: 25,
++      },
+     ],
+   },
+   {
+@@ -279,7 +697,7 @@ const geojeSubjects: Subject[] = [
+     assessments: [],
+     passOnly: true,
+   },
+-];
++]
+ 
+ const buheungSubjects: Subject[] = [
+   {
+@@ -287,10 +705,34 @@ const buheungSubjects: Subject[] = [
+     name: "국어",
+     color: "bg-rose-500",
+     assessments: [
+-      { id: "midterm", type: "지필평가", title: "중간고사", period: "2일차 · 2교시", weight: 30 },
+-      { id: "final", type: "지필평가", title: "기말고사", period: "1일차 · 3교시", weight: 30 },
+-      { id: "reading", type: "수행평가", title: "한 학기 한 권 읽기", period: "2학기", weight: 20 },
+-      { id: "writing", type: "수행평가", title: "주장하는 글쓰기", period: "2학기", weight: 20 },
++      {
++        id: "midterm",
++        type: "지필평가",
++        title: "중간고사",
++        period: "2일차 · 2교시",
++        weight: 30,
++      },
++      {
++        id: "final",
++        type: "지필평가",
++        title: "기말고사",
++        period: "1일차 · 3교시",
++        weight: 30,
++      },
++      {
++        id: "reading",
++        type: "수행평가",
++        title: "한 학기 한 권 읽기",
++        period: "2학기",
++        weight: 20,
++      },
++      {
++        id: "writing",
++        type: "수행평가",
++        title: "주장하는 글쓰기",
++        period: "2학기",
++        weight: 20,
++      },
+     ],
+   },
+   {
+@@ -298,9 +740,27 @@ const buheungSubjects: Subject[] = [
+     name: "도덕",
+     color: "bg-amber-500",
+     assessments: [
+-      { id: "fi
+
+[truncated: omitted lines 828-4970 (146476 bytes, bytes 25564-172039)]
+
+-import "./VisitorStats.css";
++import { useEffect, useState } from "react"
++import "./VisitorStats.css"
+ 
+-const API_URL = "https://grade-calculator-stats.grade-calculator.workers.dev";
++const API_URL = "https://grade-calculator-stats.grade-calculator.workers.dev"
+ 
+ type Stats = {
+-  today: number;
+-  total: number;
+-};
++  today: number
++  total: number
++}
+ 
+-const format = (value: number) => value.toLocaleString();
++const format = (value: number) => value.toLocaleString()
+ 
+ export default function VisitorStats() {
+-  const [stats, setStats] = useState<Stats | null>(null);
++  const [stats, setStats] = useState<Stats | null>(null)
+ 
+   useEffect(() => {
+-    let active = true;
++    let active = true
+ 
+     const loadStats = async () => {
+       try {
+-        const response = await fetch(`${API_URL}/stats`, { cache: "no-store" });
++        const response = await fetch(`${API_URL}/stats`, { cache: "no-store" })
+ 
+         if (!response.ok) {
+-          throw new Error("통계 조회 실패");
++          throw new Error("통계 조회 실패")
+         }
+ 
+-        const data: Stats = await response.json();
++        const data: Stats = await response.json()
+ 
+-        if (active && Number.isFinite(data.today) && Number.isFinite(data.total)) {
+-          setStats(data);
++        if (
++          active &&
++          Number.isFinite(data.today) &&
++          Number.isFinite(data.total)
++        ) {
++          setStats(data)
+         }
+       } catch {
+         // Visitor stats are optional; keep them hidden and retry on the next interval.
+       }
+-    };
++    }
+ 
+     const trackAndLoad = async () => {
+       try {
+-        await fetch(`${API_URL}/track`, { cache: "no-store", keepalive: true });
++        await fetch(`${API_URL}/track`, { cache: "no-store", keepalive: true })
+       } catch {}
+ 
+-      await loadStats();
+-    };
++      await loadStats()
++    }
+ 
+-    trackAndLoad();
++    trackAndLoad()
+ 
+-    const timer = window.setInterval(loadStats, 30000);
++    const timer = window.setInterval(loadStats, 30000)
+ 
+     return () => {
+-      active = false;
+-      window.clearInterval(timer);
+-    };
+-  }, []);
++      active = false
++      window.clearInterval(timer)
++    }
++  }, [])
+ 
+-  if (!stats) return null;
++  if (!stats) return null
+ 
+   return (
+     <span className="visitor-stats">
+@@ -60,5 +64,5 @@ export default function VisitorStats() {
+       {" · "}
+       <span>누적 조회 {format(stats.total)}회</span>
+     </span>
+-  );
++  )
+ }
+diff --git a/src/firebase.ts b/src/firebase.ts
+index 29b5122..11683f2 100644
+--- a/src/firebase.ts
++++ b/src/firebase.ts
+@@ -1,18 +1,23 @@
+-import { initializeApp } from "firebase/app";
+-import {
+-  getAuth,
+-  GoogleAuthProvider,
+-} from "firebase/auth";
+-
++import { initializeApp } from "firebase/app"
++
++import { getAuth, GoogleAuthProvider } from "firebase/auth"
++
+ const firebaseConfig = {
+-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyACV3RgomWyjB1exxfc2G-8OxtdIbnNG5w",
++  apiKey:
++    import.meta.env.VITE_FIREBASE_API_KEY ||
++    "AIzaSyACV3RgomWyjB1exxfc2G-8OxtdIbnNG5w",
+   authDomain:
+-    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "grade-calculator-by-dohoon.firebaseapp.com",
+-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "grade-calculator-by-dohoon",
+-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:134504849880:web:f64fe5f5d782412b69d2ad",
+-};
+-
+-const app = initializeApp(firebaseConfig);
+-
+-export const auth = getAuth(app);
+-export const googleProvider = new GoogleAuthProvider();
++    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
++    "grade-calculator-by-dohoon.firebaseapp.com",
++  projectId:
++    import.meta.env.VITE_FIREBASE_PROJECT_ID || "grade-calculator-by-dohoon",
++  appId:
++    import.meta.env.VITE_FIREBASE_APP_ID ||
++    "1:134504849880:web:f64fe5f5d782412b69d2ad",
++}
++
++const app = initializeApp(firebaseConfig)
++
++export const auth = getAuth(app)
++
++export const googleProvider = new GoogleAuthProvider()
+diff --git a/src/main.tsx b/src/main.tsx
+index 964aeb4..d250666 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -1,9 +1,9 @@
+-import React from 'react'
+-import ReactDOM from 'react-dom/client'
+-import App from './App'
+-import './index.css'
++import React from "react"
++import ReactDOM from "react-dom/client"
++import App from "./App"
++import "./index.css"
+ 
+-ReactDOM.createRoot(document.getElementById('root')!).render(
++ReactDOM.createRoot(document.getElementById("root")!).render(
+   <React.StrictMode>
+     <App />
+   </React.StrictMode>,
+diff --git a/src/userDataApi.ts b/src/userDataApi.ts
+index 9830750..19fa5d3 100644
+--- a/src/userDataApi.ts
++++ b/src/userDataApi.ts
+@@ -1,55 +1,56 @@
+-import { auth } from "./firebase";
+-
+-const API_URL =
+-  "https://grade-calculator-user-data.grade-calculator.workers.dev";
+-
+-export type UserData = Record<string, Record<string, string>>;
+-
+-type LoadResponse = {
+-  data: UserData | null;
+-  updatedAt: string | null;
+-};
+-
+-async function authorizedFetch(
+-  method: "GET" | "PUT",
+-  data?: UserData,
+-) {
+-  const user = auth.currentUser;
+-
+-  if (!user) {
+-    throw new Error("로그인이 필요합니다.");
+-  }
+-
+-  const token = await user.getIdToken();
+-
+-  const response = await fetch(`${API_URL}/api/me/data`, {
+-    method,
+-    headers: {
+-      Authorization: `Bearer ${token}`,
+-      ...(method === "PUT"
+-        ? { "Content-Type": "application/json" }
+-        : {}),
+-    },
+-    ...(method === "PUT"
+-      ? { body: JSON.stringify({ data }) }
+-      : {}),
+-  });
+-
+-  if (!response.ok) {
+-    if (response.status === 401) {
+-      throw new Error("로그인이 만료되었거나 인증에 실패했습니다.");
+-    }
+-
+-    throw new Error(`데이터 요청 실패: HTTP ${response.status}`);
+-  }
+-
+-  return response.json();
+-}
+-
+-export async function loadUserData(): Promise<LoadResponse> {
+-  return authorizedFetch("GET") as Promise<LoadResponse>;
+-}
+-
+-export async function saveUserData(data: UserData): Promise<void> {
+-  await authorizedFetch("PUT", data);
++import { auth } from "./firebase"
++
++const API_URL =
++  "https://grade-calculator-user-data.grade-calculator.workers.dev"
++
++export type UserData = Record<string, Record<string, string>>
++
++type LoadResponse = {
++  data: UserData | null
++
++  updatedAt: string | null
++}
++
++async function authorizedFetch(
++  method: "GET" | "PUT",
++
++  data?: UserData,
++) {
++  const user = auth.currentUser
++
++  if (!user) {
++    throw new Error("로그인이 필요합니다.")
++  }
++
++  const token = await user.getIdToken()
++
++  const response = await fetch(`${API_URL}/api/me/data`, {
++    method,
++
++    headers: {
++      Authorization: `Bearer ${token}`,
++
++      ...(method === "PUT" ? { "Content-Type": "application/json" } : {}),
++    },
++
++    ...(method === "PUT" ? { body: JSON.stringify({ data }) } : {}),
++  })
++
++  if (!response.ok) {
++    if (response.status === 401) {
++      throw new Error("로그인이 만료되었거나 인증에 실패했습니다.")
++    }
++
++    throw new Error(`데이터 요청 실패: HTTP ${response.status}`)
++  }
++
++  return response.json()
++}
++
++export async function loadUserData(): Promise<LoadResponse> {
++  return authorizedFetch("GET") as Promise<LoadResponse>
++}
++
++export async function saveUserData(data: UserData): Promise<void> {
++  await authorizedFetch("PUT", data)
+ }
+diff --git a/vite.config.ts b/vite.config.ts
+index 7c723a9..70f12a3 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -1,21 +1,20 @@
+-import { defineConfig, type HtmlTagDescriptor, type Plugin } from 'vite'
+-import { VitePWA } from 'vite-plugin-pwa'
+-import react from '@vitejs/plugin-react'
+-import tailwindcss from '@tailwindcss/vite'
+-import path from 'node:path'
+-
+-import siteConfiguration from './.figma/make/site.json'
++import { defineConfig, type HtmlTagDescriptor, type Plugin } from "vite"
++import { VitePWA } from "vite-plugin-pwa"
++import react from "@vitejs/plugin-react"
++import tailwindcss from "@tailwindcss/vite"
++import path from "node:path"
+ 
++import siteConfiguration from "./.figma/make/site.json"
+ 
+ // Vite config — https://vitejs.dev/config/
+ export default defineConfig(({ mode }) => {
+   // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
+-  const emitSourcemaps = mode === 'development'
++  const emitSourcemaps = mode === "development"
+ 
+   return {
+-    base: '',
++    base: "",
+     build: {
+-      sourcemap: emitSourcemaps ? 'inline' : false,
++      sourcemap: emitSourcemaps ? "inline" : false,
+       minify: !emitSourcemaps,
+     },
+     plugins: [
+@@ -24,64 +23,56 @@ export default defineConfig(({ mode }) => {
+       figmaSiteConfiguration(siteConfiguration),
+       figmaErrorOverlayReplay(),
+       figmaReactRefreshBoundaryFallback(),
+-      figmaMakeKitPlugin({ storiesGlob: '/src/**/*.stories.{ts,tsx,js,jsx}' }),
++      figmaMakeKitPlugin({ storiesGlob: "/src/**/*.stories.{ts,tsx,js,jsx}" }),
+       VitePWA({
+-        registerType: 'autoUpdate',
++        registerType: "autoUpdate",
+ 
+-        includeAssets: [
+-          'favicon.svg',
+-          'pwa-192.png',
+-          'pwa-512.png'
+-        ],
++        includeAssets: ["favicon.svg", "pwa-192.png", "pwa-512.png"],
+ 
+         manifest: {
+-          name: '원점수 계산기 by dohoon',
+-          short_name: '원점수 계산기 by dohoon',
+-          description: '자동으로 원점수를 계산합니다',
+-          theme_color: '#ffffff',
+-          background_color: '#ffffff',
+-          display: 'standalone',
+-          start_url: './',
+-          scope: './',
++          name: "원점수 계산기 by dohoon",
++          short_name: "원점수 계산기 by dohoon",
++          description: "자동으로 원점수를 계산합니다",
++          theme_color: "#ffffff",
++          background_color: "#ffffff",
++          display: "standalone",
++          start_url: "./",
++          scope: "./",
+           icons: [
+             {
+-              src: 'pwa-192.png',
+-              sizes: '192x192',
+-              type: 'image/png'
++              src: "pwa-192.png",
++              sizes: "192x192",
++              type: "image/png",
+             },
+             {
+-              src: 'pwa-512.png',
+-              sizes: '512x512',
+-              type: 'image/png'
+-            }
+-          ]
++              src: "pwa-512.png",
++              sizes: "512x512",
++              type: "image/png",
++            },
++          ],
+         },
+ 
+         workbox: {
+-          globPatterns: [
+-            '**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'
+-          ]
+-        }
+-      })
++          globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,woff2}"],
++        },
++      }),
+     ],
+     resolve: {
+       alias: {
+-        '@': path.resolve(__dirname, './src'),
++        "@": path.resolve(__dirname, "./src"),
+       },
+     },
+     server: {
+-      host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
+-      port: parseInt(process.env.PORT || '8443'),
++      host: process.env.FIGMA_DEV_SERVER_HOST || "0.0.0.0",
++      port: parseInt(process.env.PORT || "8443"),
+       strictPort: true,
+       watch: {
+-        ignored: [
+-          '**/.figma/**',
+-],
++        ignored: ["**/.figma/**"],
+       },
+     },
+     preview: {
+-      host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
+-      port: parseInt(process.env.PORT || '8443'),
++      host: process.env.FIGMA_DEV_SERVER_HOST || "0.0.0.0",
++      port: parseInt(process.env.PORT || "8443"),
+     },
+   }
+ })
+@@ -116,34 +107,45 @@ type FigmaSiteConfiguration = {
+ /** Applies /.figma/make/site.json to the generated document shell. */
+ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
+   function sanitizeHtmlValue(value: string | undefined): string {
+-    return value?.replace(/[^a-zA-Z0-9_-]/g, '') || ''
++    return value?.replace(/[^a-zA-Z0-9_-]/g, "") || ""
+   }
+   function escapeHtmlText(value: string): string {
+-    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
++    return value
++      .replace(/&/g, "&amp;")
++      .replace(/</g, "&lt;")
++      .replace(/>/g, "&gt;")
+   }
+-  function replaceHtmlCommentSlot(html: string, slotName: string, content: string): string {
++  function replaceHtmlCommentSlot(
++    html: string,
++    slotName: string,
++    content: string,
++  ): string {
+     return html.replace(`<!-- ${slotName} -->`, content)
+   }
+ 
+   const title = config.title ?? "원점수 계산기 by dohoon"
+-  const description = config.description ?? ''
+-  // Imported HTML keeps its own favicon; new Makes default to the Make product 
+-  const socialImage = config.openGraph?.image ?? ''
+-  const language = sanitizeHtmlValue(config.language) || 'en'
+-  const googleAnalyticsId = sanitizeHtmlValue(config.analytics?.googleAnalyticsId)
+-  const headStart = config.customScripts?.headStart ?? ''
+-  const headEnd = config.customScripts?.headEnd ?? ''
+-  const bodyStart = config.customScripts?.bodyStart ?? ''
+-  const bodyEnd = config.customScripts?.bodyEnd ?? ''
+-  const robotsTxt = config.robots?.index === false ? 'User-agent: *\nDisallow: /\n' : ''
++  const description = config.description ?? ""
++  // Imported HTML keeps its own favicon; new Makes default to the Make product
++  const socialImage = config.openGraph?.image ?? ""
++  const language = sanitizeHtmlValue(config.language) || "en"
++  const googleAnalyticsId = sanitizeHtmlValue(
++    config.analytics?.googleAnalyticsId,
++  )
++  const headStart = config.customScripts?.headStart ?? ""
++  const headEnd = config.customScripts?.headEnd ?? ""
++  const bodyStart = config.customScripts?.bodyStart ?? ""
++  const bodyEnd = config.customScripts?.bodyEnd ?? ""
++  const robotsTxt =
++    config.robots?.index === false ? "User-agent: *\nDisallow: /\n" : ""
+ 
+   return {
+-    name: 'figma-site-configuration',
++    name: "figma-site-configuration",
+     configureServer(server) {
+       server.middlewares.use((req, res, next) => {
+-        if (!robotsTxt || req.url?.split('?')[0] !== '/robots.txt') return next()
++        if (!robotsTxt || req.url?.split("?")[0] !== "/robots.txt")
++          return next()
+ 
+-        res.setHeader('Content-Type', 'text/plain; charset=utf-8')
++        res.setHeader("Content-Type", "text/plain; charset=utf-8")
+         res.end(robotsTxt)
+       })
+     },
+@@ -151,62 +153,94 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
+       if (!robotsTxt) return
+ 
+       this.emitFile({
+-        type: 'asset',
+-        fileName: 'robots.txt',
++        type: "asset",
++        fileName: "robots.txt",
+         source: robotsTxt,
+       })
+     },
+     transformIndexHtml: {
+-      order: 'pre',
++      order: "pre",
+       handler(html) {
+         let result = html
+-        result = replaceHtmlCommentSlot(result, 'figma:lang', language)
+-        result = replaceHtmlCommentSlot(result, 'figma:title', escapeHtmlText(title))
+-        result = replaceHtmlCommentSlot(result, 'figma:head-start', headStart)
+-        result = replaceHtmlCommentSlot(result, 'figma:head-end', headEnd)
+-        result = replaceHtmlCommentSlot(result, 'figma:body-start', bodyStart)
+-        result = replaceHtmlCommentSlot(result, 'figma:body-end', bodyEnd)
++        result = replaceHtmlCommentSlot(result, "figma:lang", language)
++        result = replaceHtmlCommentSlot(
++          result,
++          "figma:title",
++          escapeHtmlText(title),
++        )
++        result = replaceHtmlCommentSlot(result, "figma:head-start", headStart)
++        result = replaceHtmlCommentSlot(result, "figma:head-end", headEnd)
++        result = replaceHtmlCommentSlot(result, "figma:body-start", bodyStart)
++        result = replaceHtmlCommentSlot(result, "figma:body-end", bodyEnd)
+ 
+         const tags: HtmlTagDescriptor[] = []
+         if (description) {
+-          tags.push({ tag: 'meta', attrs: { name: 'description', content: description }, injectTo: 'head' })
++          tags.push({
++            tag: "meta",
++            attrs: { name: "description", content: description },
++            injectTo: "head",
++          })
+         }
+         if (config.robots?.index === false) {
+-          tags.push({ tag: 'meta', attrs: { name: 'robots', content: 'noindex, nofollow' }, injectTo: 'head' })
++          tags.push({
++            tag: "meta",
++            attrs: { name: "robots", content: "noindex, nofollow" },
++            injectTo: "head",
++          })
+         }
+         if (title) {
+-          tags.push({ tag: 'meta', attrs: { property: 'og:title', content: title }, injectTo: 'head' })
++          tags.push({
++            tag: "meta",
++            attrs: { property: "og:title", content: title },
++            injectTo: "head",
++          })
+         }
+         if (description) {
+-          tags.push({ tag: 'meta', attrs: { property: 'og:description', content: description }, injectTo: 'head' })
++          tags.push({
++            tag: "meta",
++            attrs: { property: "og:description", content: description },
++            injectTo: "head",
++          })
+         }
+         if (socialImage) {
+           tags.push(
+-            { tag: 'meta', attrs: { property: 'og:image', content: socialImage }, injectTo: 'head' },
+-            { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' }, injectTo: 'head' },
+-            { tag: 'meta', attrs: { name: 'twitter:image', content: socialImage }, injectTo: 'head' },
++            {
++              tag: "meta",
++              attrs: { property: "og:image", content: socialImage },
++              injectTo: "head",
++            },
++            {
++              tag: "meta",
++              attrs: { name: "twitter:card", content: "summary_large_image" },
++              injectTo: "head",
++            },
++            {
++              tag: "meta",
++              attrs: { name: "twitter:image", content: socialImage },
++              injectTo: "head",
++            },
+           )
+         }
+ 
+         if (googleAnalyticsId) {
+           tags.push(
+             {
+-              tag: 'script',
++              tag: "script",
+               attrs: {
+                 async: true,
+                 src: `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`,
+               },
+-              injectTo: 'head',
++              injectTo: "head",
+             },
+             {
+-              tag: 'script',
++              tag: "script",
+               children: `
+   window.dataLayer = window.dataLayer || [];
+   function gtag(){dataLayer.push(arguments);}
+   gtag('js', new Date());
+   gtag('config', ${JSON.stringify(googleAnalyticsId)});
+ `,
+-              injectTo: 'head',
++              injectTo: "head",
+             },
+           )
+         }
+@@ -214,7 +248,7 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
+         if (config.accessibility?.addBypassLinks) {
+           tags.push(
+             {
+-              tag: 'style',
++              tag: "style",
+               children: `
+   .figma-bypass-link {
+     position: fixed;
+@@ -233,13 +267,13 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
+     transform: translateY(0);
+   }
+ `,
+-              injectTo: 'head',
++              injectTo: "head",
+             },
+             {
+-              tag: 'a',
+-              attrs: { class: 'figma-bypass-link', href: '#root' },
+-              children: 'Skip to content',
+-              injectTo: 'body-prepend',
++              tag: "a",
++              attrs: { class: "figma-bypass-link", href: "#root" },
++              children: "Skip to content",
++              injectTo: "body-prepend",
+             },
+           )
+         }
+@@ -268,26 +302,28 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
+  */
+ function figmaErrorOverlayReplay(): Plugin {
+   return {
+-    name: 'figma-error-overlay-replay',
+-    apply: 'serve',
++    name: "figma-error-overlay-replay",
++    apply: "serve",
+     configureServer(server) {
+       let lastError: object | null = null
+ 
+-      const origSend = server.ws.send.bind(server.ws) as (...args: any[]) => void
+-      server.ws.send = ((...args: any[]) => {
++      const origSend = server.ws.send.bind(server.ws) as (
++        ...args: any[]
++      ) => void
++      server.ws.send = (((...args: any[]) => {
+         const payload = args[0]
+-        if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
++        if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+           const type = (payload as { type?: string }).type
+-          if (type === 'error') {
+-            lastError = payload as object
+-          } else if (type === 'update' || type === 'full-reload') {
++          if (type === "error") {
++            lastError = (payload as object)
++          } else if (type === "update" || type === "full-reload") {
+             lastError = null
+           }
+         }
+         return origSend(...args)
+-      }) as typeof server.ws.send
++      }) as typeof server.ws.send)
+ 
+-      server.ws.on('connection', (socket) => {
++      server.ws.on("connection", (socket) => {
+         if (lastError !== null) {
+           socket.send(JSON.stringify(lastError))
+         }
+@@ -309,17 +345,17 @@ function figmaErrorOverlayReplay(): Plugin {
+  * the old tree mounted until the page is reloaded.
+  */
+ function figmaReactRefreshBoundaryFallback(): Plugin {
+-  type ModuleNode = import('vite').ModuleNode
++  type ModuleNode = import("vite").ModuleNode
+   const hadRefreshBoundary = new Map<string, boolean>()
+   const lostRefreshBoundaries = new Set<string>()
+   let sendFullReload: (() => void) | null = null
+ 
+   return {
+-    name: 'figma-react-refresh-boundary-fallback',
+-    apply: 'serve',
+-    enforce: 'post',
++    name: "figma-react-refresh-boundary-fallback",
++    apply: "serve",
++    enforce: "post",
+     configureServer(server) {
+-      sendFullReload = () => server.ws.send({ type: 'full-reload', path: '*' })
++      sendFullReload = () => server.ws.send({ type: "full-reload", path: "*" })
+     },
+     handleHotUpdate({ modules, server, timestamp }) {
+       if (lostRefreshBoundaries.size === 0) return
+@@ -331,11 +367,16 @@ function figmaReactRefreshBoundaryFallback(): Plugin {
+         if (!current || visited.has(current)) continue
+         visited.add(current)
+ 
+-        const moduleId = current.id?.split('?')[0]
++        const moduleId = current.id?.split("?")[0]
+         if (moduleId && lostRefreshBoundaries.has(moduleId)) {
+           const invalidated = new Set<ModuleNode>()
+           for (const updatedModule of modules) {
+-            server.moduleGraph.invalidateModule(updatedModule, invalidated, timestamp, true)
++            server.moduleGraph.invalidateModule(
++              updatedModule,
++              invalidated,
++              timestamp,
++              true,
++            )
+           }
+           sendFullReload?.()
+           return []
+@@ -345,10 +386,11 @@ function figmaReactRefreshBoundaryFallback(): Plugin {
+       }
+     },
+     transform(code, id) {
+-      if (!/\.[jt]sx?(?:\?|$)/.test(id) || id.includes('/node_modules/')) return null
++      if (!/\.[jt]sx?(?:\?|$)/.test(id) || id.includes("/node_modules/"))
++        return null
+ 
+-      const moduleId = id.split('?')[0] ?? id
+-      const hasRefreshBoundary = code.includes('registerExportsForReactRefresh')
++      const moduleId = id.split("?")[0] ?? id
++      const hasRefreshBoundary = code.includes("registerExportsForReactRefresh")
+       const previousHadRefreshBoundary = hadRefreshBoundary.get(moduleId)
+       hadRefreshBoundary.set(moduleId, hasRefreshBoundary)
+ 
+@@ -374,11 +416,15 @@ function figmaReactRefreshBoundaryFallback(): Plugin {
+  * builds (`vite build`) skip it entirely so the route doesn't leak
+  * into shipped bundles.
+  */
+-function figmaMakeKitPlugin(options: { storiesGlob: string | string[] }): Plugin {
+-  const storiesGlob = Array.isArray(options.storiesGlob) ? options.storiesGlob : [options.storiesGlob]
+-  const ROUTE = '/.figma/make/kit.html'
+-  const VIRTUAL_ID = 'virtual:figma-stories'
+-  const RESOLVED_ID = '\0' + VIRTUAL_ID
++function figmaMakeKitPlugin(options: {
++  storiesGlob: string | string[]
++}): Plugin {
++  const storiesGlob = Array.isArray(options.storiesGlob)
++    ? options.storiesGlob
++    : [options.storiesGlob]
++  const ROUTE = "/.figma/make/kit.html"
++  const VIRTUAL_ID = "virtual:figma-stories"
++  const RESOLVED_ID = "\0" + VIRTUAL_ID
+   const STORIES_MODULE = `export const stories = import.meta.glob(${JSON.stringify(storiesGlob)})`
+   const HTML_BOOTSTRAP = `<!doctype html>
+ <html lang="en">
+@@ -397,8 +443,8 @@ function figmaMakeKitPlugin(options: { storiesGlob: string | string[] }): Plugin
+ </html>`
+ 
+   return {
+-    name: 'figma-make-kit',
+-    apply: 'serve',
++    name: "figma-make-kit",
++    apply: "serve",
+     resolveId(id) {
+       if (id === VIRTUAL_ID) return RESOLVED_ID
+       return null
+@@ -409,11 +455,11 @@ function figmaMakeKitPlugin(options: { storiesGlob: string | string[] }): Plugin
+     },
+     configureServer(server) {
+       server.middlewares.use(async (req, res, next) => {
+-        const url = req.url || ''
+-        if (url.split('?')[0] !== ROUTE) return next()
++        const url = req.url || ""
++        if (url.split("?")[0] !== ROUTE) return next()
+ 
+         try {
+-          res.setHeader('Content-Type', 'text/html')
++          res.setHeader("Content-Type", "text/html")
+           res.end(await server.transformIndexHtml(url, HTML_BOOTSTRAP))
+         } catch (err) {
+           next(err as Error)
+
+--- stderr ---
+
+
+Use `read` on the stdout/stderr paths above for the full output.
