@@ -10,6 +10,16 @@
     "homepage": "http://karak.sen.ms.kr"
   },
   {
+    "schoolcode": "0000000",
+    "name": "테스트중학교",
+    "engname": "Test Middle School",
+    "cityname": "Testcity",
+    "postcode": "00000",
+    "address": "Testcity testroad 00",
+    "call": "00-0000-0000",
+    "homepage": "test.com"
+  },
+  {
     "schoolcode": "7041164",
     "name": "가산중학교",
     "engname": "Gasan Middle School",
