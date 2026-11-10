@@ -77,14 +77,14 @@ function emptySubject(index: number): ConfigSubject {
 
 function emptyAssessment(
   type: ConfigAssessment["type"],
-  index: number,
+  _index: number,
 ): ConfigAssessment {
   return {
     id: createId("assessment"),
     type,
-    title: type === "지필평가" ? `시험 ${index + 1}` : `수행평가 ${index + 1}`,
+    title: "",
     period: "",
-    weight: 0,
+    weight: Number.NaN,
   }
 }
 
@@ -101,6 +101,10 @@ function cloneConfig(config: SchoolConfig): SchoolConfig {
 function validateConfig(config: SchoolConfig) {
   if (!config.schoolCode || !config.schoolName)
     return "학교 검색 결과에서 학교를 선택해 주세요."
+  if (!Number.isInteger(config.grade) || config.grade < 1 || config.grade > 3)
+    return "중학교 학년을 선택해 주세요."
+  if (config.semester !== 1 && config.semester !== 2)
+    return "학기를 선택해 주세요."
   if (config.subjects.length === 0) return "과목을 한 개 이상 추가해 주세요."
   const subjectIds = new Set<string>()
   for (const subject of config.subjects) {
@@ -172,7 +176,7 @@ function Editor({
   const [config, setConfig] = useState<SchoolConfig>(
     initial
       ? cloneConfig(initial)
-      : { schoolCode: "", schoolName: "", grade: 2, semester: 2, subjects: [] },
+      : { schoolCode: "", schoolName: "", grade: 0, semester: 0, subjects: [] },
   )
   const [schoolQuery, setSchoolQuery] = useState(initial?.schoolName ?? "")
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo[]>([])
@@ -390,7 +394,10 @@ function Editor({
               }
               value={config.grade}
             >
-              {[1, 2, 3, 4, 5, 6].map((grade) => (
+              <option disabled value={0}>
+                학년을 입력하세요
+              </option>
+              {[1, 2, 3].map((grade) => (
                 <option key={grade} value={grade}>
                   {grade}학년
                 </option>
@@ -409,6 +416,9 @@ function Editor({
               }
               value={config.semester}
             >
+              <option disabled value={0}>
+                학기를 입력하세요
+              </option>
               <option value={1}>1학기</option>
               <option value={2}>2학기</option>
             </select>
@@ -449,13 +459,15 @@ function Editor({
           )}
           {config.subjects.map((subject, subjectIndex) => {
             const total = subject.assessments.reduce(
-              (sum, assessment) => sum + assessment.weight,
+              (sum, assessment) =>
+                sum +
+                (Number.isFinite(assessment.weight) ? assessment.weight : 0),
               0,
             )
             return (
               <article
                 className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-950/50 sm:p-5"
-                key={subject.id}
+                key={`subject-${subjectIndex}`}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`size-3 rounded-full ${subject.color}`} />
@@ -617,7 +629,7 @@ function Editor({
                         (assessment, assessmentIndex) => (
                           <div
                             className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
-                            key={assessment.id}
+                            key={`assessment-${assessmentIndex}`}
                           >
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)_7rem]">
                               <select
@@ -659,7 +671,7 @@ function Editor({
                                     ),
                                   }))
                                 }
-                                placeholder="평가명"
+                                placeholder="평가명을 입력하세요"
                                 value={assessment.title}
                               />
                               <input
@@ -699,7 +711,11 @@ function Editor({
                                                 100,
                                                 Math.max(
                                                   0,
-                                                  Number(event.target.value),
+                                                  event.target.value === ""
+                                                    ? Number.NaN
+                                                    : Number(
+                                                        event.target.value,
+                                                      ),
                                                 ),
                                               ),
                                             }
@@ -707,8 +723,13 @@ function Editor({
                                     ),
                                   }))
                                 }
+                                placeholder="반영비율"
                                 type="number"
-                                value={assessment.weight}
+                                value={
+                                  Number.isFinite(assessment.weight)
+                                    ? assessment.weight
+                                    : ""
+                                }
                               />
                             </div>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -910,6 +931,10 @@ export default function SchoolManager({
     sourceKey?: string,
     id?: string,
   ) => {
+    if (!user && !config) {
+      onRequestSignIn()
+      return
+    }
     setEditing({ config, sourceKey, id })
     setView("editor")
   }
@@ -949,7 +974,7 @@ export default function SchoolManager({
               onClick={() => showEditor()}
               type="button"
             >
-              학교 추가
+              {user ? "학교 추가" : "로그인 후 학교 추가"}
             </button>
             <button className={secondaryButton} onClick={onClose} type="button">
               닫기
@@ -992,7 +1017,7 @@ export default function SchoolManager({
                   onClick={() => showEditor()}
                   type="button"
                 >
-                  새 학교 만들기
+                  {user ? "새 학교 만들기" : "로그인 후 학교 만들기"}
                 </button>
               </div>
               {schools.length === 0 ? (
@@ -1102,7 +1127,7 @@ export default function SchoolManager({
                   value={grade}
                 >
                   <option value="">전체 학년</option>
-                  {[1, 2, 3, 4, 5, 6].map((item) => (
+                  {[1, 2, 3].map((item) => (
                     <option key={item} value={item}>
                       {item}학년
                     </option>

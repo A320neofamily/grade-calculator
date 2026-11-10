@@ -93,7 +93,7 @@ export function parseSchoolConfig(value: unknown): SchoolConfig | null {
     return null
   if (
     grade < 1 ||
-    grade > 6 ||
+    grade > 3 ||
     (semester !== 1 && semester !== 2) ||
     !Array.isArray(value.subjects) ||
     value.subjects.length === 0
