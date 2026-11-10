@@ -1,5 +1,5 @@
 {
-  "description": "Effortlessly calculate raw scores for each subject by entering test scores into this user-friendly app, designed for educators and students.",
+  "description": "Bootstraps imported projects and verifies deployment and preview setup, helping teams prepare initial app imports for reliable release.",
   "robots": {
     "index": false
   },

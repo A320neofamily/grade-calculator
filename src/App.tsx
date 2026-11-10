@@ -4,6 +4,8 @@ import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
 import { loadUserData, saveUserData, type UserData } from "./userDataApi";
 import VisitorStats from "./VisitorStats";
+import SchoolManager from "./SchoolManager";
+import { getSchoolKey, parseSchoolConfig, type SchoolConfig } from "./schoolConfigApi";
 import { version as appVersion } from "../package.json";
 
 type Assessment = {
@@ -1488,6 +1490,10 @@ type School = {
   /** localStorage key. 배포 후에는 바꾸지 마세요. 바꾸면 기존 사용자의 저장된 점수를 읽지 못합니다. */
   storageKey: string;
   subjects: Subject[];
+  schoolCode?: string;
+  grade?: number;
+  semester?: number;
+  sourceKey?: string;
 };
 
 // 학교 목록(드롭다운 순서)의 단일 출처입니다.
@@ -1566,15 +1572,59 @@ const schools = [
   },
 ] as const satisfies readonly School[];
 
-type SchoolId = (typeof schools)[number]["id"];
+type SchoolId = string;
+type CustomSchool = School & {
+  schoolCode: string;
+  grade: number;
+  semester: number;
+};
 
-const schoolsById = Object.fromEntries(schools.map((school) => [school.id, school])) as Record<
-  SchoolId,
-  (typeof schools)[number]
->;
+const CUSTOM_SCHOOLS_STORAGE_KEY = "grade-calculator-custom-schools-v1";
 
-function getSubjects(schoolId: SchoolId) {
-  return schoolsById[schoolId].subjects;
+function configToSchool(config: SchoolConfig, sourceKey?: string): CustomSchool {
+  const schoolKey = getSchoolKey(config);
+  return {
+    id: `custom:${schoolKey}`,
+    name: `${config.schoolName} ${config.grade}학년 ${config.semester}학기`,
+    shortName: config.schoolName,
+    storageKey: `semester-score-calculator-custom-${schoolKey}`,
+    // User-created schools keep the explicit order selected in the editor.
+    // Their Subject shape and canonical IDs remain compatible with orderSubjects().
+    subjects: config.subjects.map((subject) => ({
+      ...subject,
+      assessments: subject.assessments.map((assessment) => ({ ...assessment })),
+    })),
+    schoolCode: config.schoolCode,
+    grade: config.grade,
+    semester: config.semester,
+    sourceKey,
+  };
+}
+
+function schoolToConfig(school: CustomSchool): SchoolConfig {
+  return {
+    schoolCode: school.schoolCode,
+    schoolName: school.shortName,
+    grade: school.grade,
+    semester: school.semester,
+    subjects: school.subjects,
+  };
+}
+
+function readCustomSchools(): CustomSchool[] {
+  try {
+    const data = JSON.parse(localStorage.getItem(CUSTOM_SCHOOLS_STORAGE_KEY) || "[]") as unknown;
+    if (!Array.isArray(data)) return [];
+    return data.flatMap((item) => {
+      if (typeof item !== "object" || item === null) return [];
+      const record = item as Record<string, unknown>;
+      const config = parseSchoolConfig(record.config);
+      if (!config) return [];
+      return [configToSchool(config, typeof record.sourceKey === "string" ? record.sourceKey : undefined)];
+    });
+  } catch {
+    return [];
+  }
 }
 
 function readStoredScores(storageKey: string): Scores {
@@ -1695,16 +1745,15 @@ export default function App() {
     if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
+  const [customSchools, setCustomSchools] = useState<CustomSchool[]>(readCustomSchools);
+  const allSchools = useMemo<School[]>(() => [...schools, ...customSchools], [customSchools]);
   const [schoolChoice, setSchoolChoice] = useState<SchoolId | "">("");
   const [activeSchoolId, setActiveSchoolId] = useState<SchoolId | null>(null);
   const [activeSubjectId, setActiveSubjectId] = useState<string>(schools[0].subjects[0].id);
   const [scoresBySchool, setScoresBySchool] = useState<Record<SchoolId, Scores>>(
-    () =>
-      Object.fromEntries(schools.map((school) => [school.id, readStoredScores(school.storageKey)])) as Record<
-        SchoolId,
-        Scores
-      >,
+    () => Object.fromEntries(allSchools.map((school) => [school.id, readStoredScores(school.storageKey)])),
   );
+  const [showSchoolManager, setShowSchoolManager] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"local" | "loading" | "saving" | "synced" | "error">("local");
@@ -1720,6 +1769,18 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
+    localStorage.setItem(
+      CUSTOM_SCHOOLS_STORAGE_KEY,
+      JSON.stringify(
+        customSchools.map((school) => ({
+          config: schoolToConfig(school),
+          ...(school.sourceKey ? { sourceKey: school.sourceKey } : {}),
+        })),
+      ),
+    );
+  }, [customSchools]);
+
+  useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const followSystemTheme = (event: MediaQueryListEvent) => {
       if (!localStorage.getItem("grade-calculator-theme")) {
@@ -1733,8 +1794,8 @@ export default function App() {
 
   useEffect(() => {
     scoresRef.current = scoresBySchool;
-    schools.forEach((school) => {
-      localStorage.setItem(school.storageKey, JSON.stringify(scoresBySchool[school.id]));
+    allSchools.forEach((school) => {
+      localStorage.setItem(school.storageKey, JSON.stringify(scoresBySchool[school.id] || {}));
     });
 
     const syncUserId = syncUserIdRef.current;
@@ -1759,7 +1820,7 @@ export default function App() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [scoresBySchool]);
+  }, [allSchools, scoresBySchool]);
 
   useEffect(() => {
     let authGeneration = 0;
@@ -1782,13 +1843,14 @@ export default function App() {
 
         // Cloud values win on conflicts; local-only values are retained and uploaded.
         const localData = scoresRef.current;
+        const schoolIds = new Set([...Object.keys(localData), ...Object.keys(cloudData || {})]);
         const mergedData = Object.fromEntries(
-          schools.map(({ id }) => [id, { ...(localData[id] || {}), ...(cloudData?.[id] || {}) }]),
+          [...schoolIds].map((id) => [id, { ...(localData[id] || {}), ...(cloudData?.[id] || {}) }]),
         ) as UserData;
 
         scoresRef.current = mergedData;
         syncUserIdRef.current = nextUser.uid;
-        setScoresBySchool(mergedData as Record<SchoolId, Scores>);
+        setScoresBySchool(mergedData);
         setSyncStatus("synced");
       } catch {
         if (generation === authGeneration) setSyncStatus("error");
@@ -1821,6 +1883,52 @@ export default function App() {
       localStorage.setItem("grade-calculator-theme", nextTheme);
       return nextTheme;
     });
+  }
+
+  function saveCustomSchool(config: SchoolConfig, sourceKey?: string, previousId?: string) {
+    const nextSchool = configToSchool(config, sourceKey);
+    setCustomSchools((current) => [
+      ...current.filter((school) => school.id !== nextSchool.id && school.id !== previousId),
+      nextSchool,
+    ]);
+    setScoresBySchool((current) => {
+      const next = { ...current };
+      const previousScores = previousId ? next[previousId] : undefined;
+      if (previousId && previousId !== nextSchool.id) delete next[previousId];
+      next[nextSchool.id] = previousScores || next[nextSchool.id] || readStoredScores(nextSchool.storageKey);
+      return next;
+    });
+    if (previousId && previousId !== nextSchool.id) {
+      const previous = customSchools.find((school) => school.id === previousId);
+      if (previous) localStorage.removeItem(previous.storageKey);
+    }
+    setSchoolChoice(nextSchool.id);
+  }
+
+  function deleteCustomSchool(id: string) {
+    const school = customSchools.find((item) => item.id === id);
+    if (school) localStorage.removeItem(school.storageKey);
+    setCustomSchools((current) => current.filter((item) => item.id !== id));
+    setScoresBySchool((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+    if (schoolChoice === id) setSchoolChoice("");
+    if (activeSchoolId === id) setActiveSchoolId(null);
+  }
+
+  function openSchool(id: string) {
+    const school = allSchools.find((item) => item.id === id);
+    if (!school || school.subjects.length === 0) return;
+    setScoresBySchool((current) => ({
+      ...current,
+      [id]: current[id] || readStoredScores(school.storageKey),
+    }));
+    setSchoolChoice(id);
+    setActiveSubjectId(school.subjects.find((subject) => !subject.passOnly)?.id || school.subjects[0].id);
+    setActiveSchoolId(id);
+    setShowSchoolManager(false);
   }
 
   const themeControl = (
@@ -1871,13 +1979,29 @@ export default function App() {
       )}
     </div>
   );
+  const schoolManager = showSchoolManager ? (
+    <SchoolManager
+      onClose={() => setShowSchoolManager(false)}
+      onDelete={deleteCustomSchool}
+      onOpen={openSchool}
+      onRequestSignIn={handleSignIn}
+      onSave={saveCustomSchool}
+      schools={customSchools.map((school) => ({
+        ...schoolToConfig(school),
+        id: school.id,
+        sourceKey: school.sourceKey,
+      }))}
+      user={user}
+    />
+  ) : null;
 
   const dataSchoolId = activeSchoolId || schoolChoice || schools[0].id;
-  const subjects = getSubjects(dataSchoolId);
-  const scores = scoresBySchool[dataSchoolId];
+  const dataSchool = allSchools.find((school) => school.id === dataSchoolId) || schools[0];
+  const subjects = dataSchool.subjects;
+  const scores = scoresBySchool[dataSchoolId] || {};
   const setScores = (update: Scores | ((current: Scores) => Scores)) => {
     setScoresBySchool((current) => {
-      const currentScores = current[dataSchoolId];
+      const currentScores = current[dataSchoolId] || {};
       return {
         ...current,
         [dataSchoolId]: typeof update === "function" ? update(currentScores) : update,
@@ -1967,11 +2091,12 @@ export default function App() {
     }
   }
 
-  const activeSchool = schools.find((school) => school.id === activeSchoolId);
+  const activeSchool = allSchools.find((school) => school.id === activeSchoolId);
 
   if (!activeSchool) {
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-100 px-5 py-12 text-slate-950 transition-colors dark:bg-slate-950 dark:text-white">
+        {schoolManager}
         <div className="absolute right-5 top-5 z-10 sm:right-8 sm:top-8">{themeControl}</div>
         <div className="absolute -left-24 top-16 size-72 rounded-full bg-indigo-500/15 blur-3xl dark:bg-indigo-600/20" />
         <div className="absolute -right-20 bottom-8 size-80 rounded-full bg-violet-400/15 blur-3xl dark:bg-violet-500/15" />
@@ -1997,8 +2122,7 @@ export default function App() {
             onSubmit={(event) => {
               event.preventDefault();
               if (!schoolChoice) return;
-              setActiveSubjectId(getSubjects(schoolChoice)[0].id);
-              setActiveSchoolId(schoolChoice);
+              openSchool(schoolChoice);
             }}
           >
             <label className="block">
@@ -2016,9 +2140,10 @@ export default function App() {
                   <option disabled value="">
                     학교를 선택하세요
                   </option>
-                  {schools.map((school) => (
+                  {allSchools.map((school) => (
                     <option key={school.id} value={school.id}>
                       {school.name}
+                      {school.id.startsWith("custom:") ? " · 내 학교" : ""}
                     </option>
                   ))}
                 </select>
@@ -2036,6 +2161,18 @@ export default function App() {
             >
               원점수 계산기 열기
               <Icon name="arrow" className="size-5" />
+            </button>
+            <div className="my-5 flex items-center gap-3 text-xs font-bold text-slate-300 dark:text-slate-600">
+              <span className="h-px flex-1 bg-current" />
+              또는
+              <span className="h-px flex-1 bg-current" />
+            </div>
+            <button
+              className="flex h-12 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-5 text-sm font-extrabold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
+              onClick={() => setShowSchoolManager(true)}
+              type="button"
+            >
+              내 학교 관리 · 학교 추가
             </button>
           </form>
           <div className="mt-4">{authControl}</div>
@@ -2059,15 +2196,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
+      {schoolManager}
       <header className="border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
               <Icon name="book" className="size-5" />
             </div>
-            <div>
-              <p className="text-[11px] font-bold tracking-[0.16em] text-indigo-600 dark:text-[#aab2cc]">
-                {activeSchool.shortName} · 2-2 평가계획
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-bold tracking-[0.16em] text-indigo-600 dark:text-[#aab2cc]">
+                {activeSchool.shortName} · {activeSchool.grade || 2}-{activeSchool.semester || 2} 평가계획
               </p>
               <p className="text-lg font-extrabold tracking-tight">원점수 계산기</p>
             </div>
@@ -2075,6 +2213,14 @@ export default function App() {
           <div className="flex items-center gap-1">
             <div className="mr-1 hidden md:block">{authControl}</div>
             {themeControl}
+            <button
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              onClick={() => setShowSchoolManager(true)}
+              type="button"
+            >
+              <span className="hidden sm:inline">내 학교 관리</span>
+              <span className="sm:hidden">관리</span>
+            </button>
             <button
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               onClick={() => setActiveSchoolId(null)}
@@ -2100,8 +2246,8 @@ export default function App() {
         <section className="mb-8">
           <div className="mb-5">
             <p className="mb-1 text-sm font-bold text-indigo-600 dark:text-[#aab2cc]">내 성적 한눈에 보기</p>
-            <h1 className="whitespace-nowrap text-[25px] font-black tracking-tight">
-              2026 {activeSchool.shortName} 2-2 성적계산기
+            <h1 className="break-keep text-[25px] font-black tracking-tight">
+              2026 {activeSchool.shortName} {activeSchool.grade || 2}-{activeSchool.semester || 2} 성적계산기
             </h1>
           </div>
 
@@ -2223,6 +2369,17 @@ export default function App() {
           </aside>
 
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+            {activeSubject.passOnly ? (
+              <div className="flex min-h-80 flex-col items-center justify-center px-6 py-12 text-center">
+                <span className={`mb-5 size-4 rounded-full ${activeSubject.color}`} />
+                <h2 className="text-2xl font-black">{activeSubject.name}</h2>
+                <p className="mt-3 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
+                  이 과목은 원점수를 산출하지 않는 과목입니다. 평가 항목과 점수를 입력하지 않으며 과목 목록에는 P로
+                  표시됩니다.
+                </p>
+              </div>
+            ) : (
+              <>
             <div className="border-b border-slate-100 px-5 py-6 dark:border-slate-800 sm:px-7">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
@@ -2348,6 +2505,8 @@ export default function App() {
               })}
 
             </div>
+              </>
+            )}
           </section>
         </div>
       </main>
