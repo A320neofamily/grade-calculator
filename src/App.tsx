@@ -3527,6 +3527,21 @@ type School = {
   sourceKey?: string
 }
 
+const EMPTY_SCHOOL: School = {
+  id: "",
+  name: "",
+  shortName: "",
+  storageKey: "",
+  subjects: [
+    {
+      id: "subject-1",
+      name: "",
+      color: "bg-slate-400",
+      assessments: [],
+    },
+  ],
+}
+
 // 학교 목록(드롭다운 순서)의 단일 출처입니다.
 // 학교를 추가하려면 위에 과목 배열을 만들고, 여기에 항목 하나만 추가하면 됩니다.
 // 점수 저장·불러오기·클라우드 동기화·화면 선택지는 모두 이 배열에서 만들어집니다.
@@ -3612,6 +3627,10 @@ type CustomSchool = School & {
 
 const CUSTOM_SCHOOLS_STORAGE_KEY = "grade-calculator-custom-schools-v1"
 
+function customSchoolsStorageKey(uid: string) {
+  return `${CUSTOM_SCHOOLS_STORAGE_KEY}:${uid}`
+}
+
 function configToSchool(
   config: SchoolConfig,
   sourceKey?: string,
@@ -3645,10 +3664,10 @@ function schoolToConfig(school: CustomSchool): SchoolConfig {
   }
 }
 
-function readCustomSchools(): CustomSchool[] {
+function readCustomSchools(uid: string): CustomSchool[] {
   try {
     const data = JSON.parse(
-      localStorage.getItem(CUSTOM_SCHOOLS_STORAGE_KEY) || "[]",
+      localStorage.getItem(customSchoolsStorageKey(uid)) || "[]",
     ) as unknown
     if (!Array.isArray(data)) return []
     return data.flatMap((item) => {
@@ -3792,14 +3811,17 @@ export default function App() {
       ? "dark"
       : "light"
   })
-  const [customSchools, setCustomSchools] =
-    useState<CustomSchool[]>(readCustomSchools)
+  const [customSchools, setCustomSchools] = useState<CustomSchool[]>([])
+  const [transientSchools, setTransientSchools] = useState<CustomSchool[]>([])
   const allSchools = useMemo<School[]>(
-    () => [...schools, ...customSchools],
-    [customSchools],
+    () => [...customSchools, ...transientSchools],
+    [customSchools, transientSchools],
   )
   const [schoolChoice, setSchoolChoice] = useState<SchoolId | "">("")
-  const [schoolSearch, setSchoolSearch] = useState("")
+  const [schoolSearch, setSchoolSearch] = useState(
+    () =>
+      new URLSearchParams(window.location.search).get("schoolid")?.trim() || "",
+  )
   const [publishedSchools, setPublishedSchools] =
     useState<PublishedSchoolSummary[]>([])
   const [schoolSearchStatus, setSchoolSearchStatus] =
@@ -3807,9 +3829,7 @@ export default function App() {
   const [schoolSearchError, setSchoolSearchError] = useState("")
   const [openingSchoolKey, setOpeningSchoolKey] = useState<string | null>(null)
   const [activeSchoolId, setActiveSchoolId] = useState<SchoolId | null>(null)
-  const [activeSubjectId, setActiveSubjectId] = useState<string>(
-    schools[0].subjects[0].id,
-  )
+  const [activeSubjectId, setActiveSubjectId] = useState("")
   const [scoresBySchool, setScoresBySchool] =
     useState<Record<SchoolId, Scores>>(() =>
       Object.fromEntries(
@@ -3821,6 +3841,9 @@ export default function App() {
     )
   const [showSchoolManager, setShowSchoolManager] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "error">(
+    "idle",
+  )
   const [authReady, setAuthReady] = useState(false)
   const [syncStatus, setSyncStatus] =
     useState<"local" | "loading" | "saving" | "synced" | "error">("local")
@@ -3857,8 +3880,9 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    if (!user) return
     localStorage.setItem(
-      CUSTOM_SCHOOLS_STORAGE_KEY,
+      customSchoolsStorageKey(user.uid),
       JSON.stringify(
         customSchools.map((school) => ({
           config: schoolToConfig(school),
@@ -3866,7 +3890,7 @@ export default function App() {
         })),
       ),
     )
-  }, [customSchools])
+  }, [customSchools, user])
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)")
@@ -3921,6 +3945,7 @@ export default function App() {
       syncUserIdRef.current = null
       setUser(nextUser)
       setAuthReady(true)
+      setCustomSchools(nextUser ? readCustomSchools(nextUser.uid) : [])
 
       if (!nextUser) {
         setSyncStatus("local")
@@ -3992,12 +4017,18 @@ export default function App() {
     previousId?: string,
   ) {
     const nextSchool = configToSchool(config, sourceKey)
-    setCustomSchools((current) => [
-      ...current.filter(
-        (school) => school.id !== nextSchool.id && school.id !== previousId,
-      ),
-      nextSchool,
-    ])
+    setCustomSchools((current) => {
+      const isAdmin =
+        Boolean(import.meta.env.VITE_MASTER_UID) &&
+        user?.uid === import.meta.env.VITE_MASTER_UID
+      if (!isAdmin && !previousId && current.length >= 1) return current
+      return [
+        ...current.filter(
+          (school) => school.id !== nextSchool.id && school.id !== previousId,
+        ),
+        nextSchool,
+      ]
+    })
     setScoresBySchool((current) => {
       const next = { ...current }
       const previousScores = previousId ? next[previousId] : undefined
@@ -4050,7 +4081,7 @@ export default function App() {
     try {
       const config = await getPublishedSchool(schoolKey)
       const nextSchool = configToSchool(config, schoolKey)
-      setCustomSchools((current) => [
+      setTransientSchools((current) => [
         ...current.filter((school) => school.id !== nextSchool.id),
         nextSchool,
       ])
@@ -4131,8 +4162,12 @@ export default function App() {
       )}
     </div>
   )
+  const isAdmin =
+    Boolean(import.meta.env.VITE_MASTER_UID) &&
+    user?.uid === import.meta.env.VITE_MASTER_UID
   const schoolManager = showSchoolManager ? (
     <SchoolManager
+      isAdmin={isAdmin}
       onClose={() => setShowSchoolManager(false)}
       onDelete={deleteCustomSchool}
       onOpen={openSchool}
@@ -4147,9 +4182,9 @@ export default function App() {
     />
   ) : null
 
-  const dataSchoolId = activeSchoolId || schoolChoice || schools[0].id
+  const dataSchoolId = activeSchoolId || schoolChoice || ""
   const dataSchool =
-    allSchools.find((school) => school.id === dataSchoolId) || schools[0]
+    allSchools.find((school) => school.id === dataSchoolId) || EMPTY_SCHOOL
   const subjects = dataSchool.subjects
   const scores = scoresBySchool[dataSchoolId] || {}
   const setScores = (update: Scores | ((current: Scores) => Scores)) => {
@@ -4271,6 +4306,26 @@ export default function App() {
   }
 
   const activeSchool = allSchools.find((school) => school.id === activeSchoolId)
+  async function shareSchool(school: School) {
+    const schoolId =
+      school.sourceKey ||
+      (school.schoolCode && school.grade && school.semester
+        ? `${school.schoolCode}-${school.grade}-${school.semester}`
+        : "")
+    if (!schoolId) {
+      setShareStatus("error")
+      return
+    }
+    const url = new URL(window.location.href)
+    url.searchParams.set("schoolid", schoolId)
+    try {
+      await navigator.clipboard.writeText(url.toString())
+      setShareStatus("copied")
+      window.setTimeout(() => setShareStatus("idle"), 1800)
+    } catch {
+      setShareStatus("error")
+    }
+  }
   const normalizedSchoolSearch = schoolSearch.trim().toLocaleLowerCase("ko")
   const localSchoolResults = normalizedSchoolSearch
     ? allSchools
@@ -4372,7 +4427,7 @@ export default function App() {
                     setSchoolSearch(event.target.value)
                     setSchoolSearchError("")
                   }}
-                  placeholder="학교명 또는 학교코드: 0000000-학년-학기 형식"
+                  placeholder="학교명 또는 학교 코드로 검색"
                   value={schoolSearch}
                 />
               </div>
@@ -4502,6 +4557,17 @@ export default function App() {
           <div className="flex items-center gap-1">
             <div className="mr-1 hidden md:block">{authControl}</div>
             {themeControl}
+            <button
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              onClick={() => void shareSchool(activeSchool)}
+              type="button"
+            >
+              {shareStatus === "copied"
+                ? "링크 복사됨"
+                : shareStatus === "error"
+                  ? "공유 실패"
+                  : "공유"}
+            </button>
             <button
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               onClick={() =>

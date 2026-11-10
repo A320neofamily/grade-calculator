@@ -262,6 +262,37 @@ export async function updateSchoolConfig(
   )
 }
 
+export async function deletePublishedSchool(schoolKey: string) {
+  const user = auth.currentUser
+  if (!user)
+    throw new SchoolConfigApiError(
+      401,
+      "학교 설정을 삭제하려면 Google 로그인이 필요합니다.",
+    )
+  const token = await user.getIdToken()
+  const response = await fetch(
+    `${SCHOOL_CONFIG_API_URL}/api/schools/${encodeURIComponent(schoolKey)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  )
+  const body = await parseResponse(response)
+  if (!response.ok) {
+    const serverMessage =
+      isRecord(body) && typeof body.message === "string" ? body.message : ""
+    throw new SchoolConfigApiError(
+      response.status,
+      responseMessage(
+        response.status,
+        serverMessage || "학교 설정을 삭제하지 못했습니다.",
+      ),
+    )
+  }
+}
+
 export async function listPublishedSchools(): Promise<PublishedSchoolSummary[]> {
   const response = await fetch(`${SCHOOL_CONFIG_API_URL}/api/schools`, {
     cache: "no-store",

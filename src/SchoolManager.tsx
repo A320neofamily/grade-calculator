@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import type { User } from "firebase/auth"
 import {
-  getPublishedSchool,
+  deletePublishedSchool,
   getSchoolKey,
   listPublishedSchools,
   publishSchoolConfig,
@@ -9,7 +9,6 @@ import {
   updateSchoolConfig,
   type ConfigAssessment,
   type ConfigSubject,
-  type PublishedSchoolSummary,
   type SchoolConfig,
 } from "./schoolConfigApi"
 
@@ -28,6 +27,7 @@ type ManagedSchool = SchoolConfig & {
 type SchoolManagerProps = {
   schools: ManagedSchool[]
   user: User | null
+  isAdmin: boolean
   onClose: () => void
   onSave: (
     config: SchoolConfig,
@@ -55,6 +55,11 @@ const COLORS = [
   "bg-slate-400",
 ]
 
+const WRITTEN_EXAMS = [
+  { id: "midterm", title: "중간고사" },
+  { id: "final", title: "기말고사" },
+] as const
+
 const inputClass =
   "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-indigo-400 dark:focus:ring-indigo-900/40"
 const secondaryButton =
@@ -62,13 +67,9 @@ const secondaryButton =
 const primaryButton =
   "rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
 
-function createId(prefix: string) {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
-}
-
 function emptySubject(index: number): ConfigSubject {
   return {
-    id: createId("subject"),
+    id: `subject-${index + 1}`,
     name: `새 과목 ${index + 1}`,
     color: COLORS[index % COLORS.length],
     assessments: [],
@@ -77,10 +78,10 @@ function emptySubject(index: number): ConfigSubject {
 
 function emptyAssessment(
   type: ConfigAssessment["type"],
-  _index: number,
+  index: number,
 ): ConfigAssessment {
   return {
-    id: createId("assessment"),
+    id: type === "지필평가" ? "" : `performance-${index + 1}`,
     type,
     title: "",
     period: "",
@@ -88,14 +89,38 @@ function emptyAssessment(
   }
 }
 
-function cloneConfig(config: SchoolConfig): SchoolConfig {
+function normalizeConfigIds(config: SchoolConfig): SchoolConfig {
   return {
+    ...config,
+    subjects: config.subjects.map((subject, subjectIndex) => {
+      let performanceIndex = 0
+      return {
+        ...subject,
+        id: `subject-${subjectIndex + 1}`,
+        assessments: subject.assessments.map((assessment) => ({
+          ...assessment,
+          id:
+            assessment.type === "지필평가"
+              ? assessment.title === "중간고사"
+                ? "midterm"
+                : assessment.title === "기말고사"
+                  ? "final"
+                  : ""
+              : `performance-${++performanceIndex}`,
+        })),
+      }
+    }),
+  }
+}
+
+function cloneConfig(config: SchoolConfig): SchoolConfig {
+  return normalizeConfigIds({
     ...config,
     subjects: config.subjects.map((subject) => ({
       ...subject,
       assessments: subject.assessments.map((assessment) => ({ ...assessment })),
     })),
-  }
+  })
 }
 
 function validateConfig(config: SchoolConfig) {
@@ -106,13 +131,8 @@ function validateConfig(config: SchoolConfig) {
   if (config.semester !== 1 && config.semester !== 2)
     return "학기를 선택해 주세요."
   if (config.subjects.length === 0) return "과목을 한 개 이상 추가해 주세요."
-  const subjectIds = new Set<string>()
   for (const subject of config.subjects) {
-    if (!subject.id.trim() || !subject.name.trim())
-      return "모든 과목의 ID와 이름을 입력해 주세요."
-    if (subjectIds.has(subject.id))
-      return `과목 ID '${subject.id}'가 중복되었습니다.`
-    subjectIds.add(subject.id)
+    if (!subject.name.trim()) return "모든 과목의 이름을 입력해 주세요."
     if (subject.passOnly) {
       if (subject.assessments.length > 0)
         return `${subject.name}: 원점수 미산출 과목에는 평가 항목을 둘 수 없습니다.`
@@ -129,8 +149,17 @@ function validateConfig(config: SchoolConfig) {
       ) {
         return `${subject.name}: 모든 평가의 ID, 이름, 시기를 입력해 주세요.`
       }
+      if (
+        assessment.type === "지필평가" &&
+        !WRITTEN_EXAMS.some(
+          (exam) =>
+            exam.id === assessment.id && exam.title === assessment.title,
+        )
+      ) {
+        return `${subject.name}: 지필평가는 중간고사 또는 기말고사만 선택할 수 있습니다.`
+      }
       if (assessmentIds.has(assessment.id))
-        return `${subject.name}: 평가 ID '${assessment.id}'가 중복되었습니다.`
+        return `${subject.name}: 같은 지필평가는 한 번만 추가할 수 있습니다.`
       assessmentIds.add(assessment.id)
       if (
         !Number.isFinite(assessment.weight) ||
@@ -229,21 +258,9 @@ function Editor({
     }))
   }
 
-  const saveLocally = () => {
-    const error = validateConfig(config)
-    if (error) {
-      setMessage({ tone: "error", text: error })
-      return
-    }
-    onSaved(config, sourceKey)
-    setMessage({
-      tone: "success",
-      text: "내 계산기에 학교 설정을 저장했습니다.",
-    })
-  }
-
   const sendConfig = async (mode: "publish" | "update") => {
-    const error = validateConfig(config)
+    const normalizedConfig = normalizeConfigIds(config)
+    const error = validateConfig(normalizedConfig)
     if (error) {
       setMessage({ tone: "error", text: error })
       return
@@ -260,11 +277,15 @@ function Editor({
     setMessage(null)
     try {
       if (mode === "publish") {
-        await publishSchoolConfig(config)
+        await publishSchoolConfig(normalizedConfig)
       } else {
-        await updateSchoolConfig(sourceKey || getSchoolKey(config), config)
+        await updateSchoolConfig(
+          sourceKey || getSchoolKey(normalizedConfig),
+          normalizedConfig,
+        )
       }
-      onSaved(config, getSchoolKey(config))
+      setConfig(normalizedConfig)
+      onSaved(normalizedConfig, getSchoolKey(normalizedConfig))
       setMessage({
         tone: "success",
         text:
@@ -530,22 +551,7 @@ function Editor({
                   </button>
                 </div>
 
-                <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
-                  <label>
-                    <span className="mb-1 block text-xs font-bold text-slate-500">
-                      과목 ID
-                    </span>
-                    <input
-                      className={inputClass}
-                      onChange={(event) =>
-                        updateSubject(subjectIndex, (current) => ({
-                          ...current,
-                          id: event.target.value.trim(),
-                        }))
-                      }
-                      value={subject.id}
-                    />
-                  </label>
+                <div className="mt-3">
                   <label>
                     <span className="mb-1 block text-xs font-bold text-slate-500">
                       표시 색상
@@ -634,7 +640,9 @@ function Editor({
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)_7rem]">
                               <select
                                 className={inputClass}
-                                onChange={(event) =>
+                                onChange={(event) => {
+                                  const nextType = event.target
+                                    .value as ConfigAssessment["type"]
                                   updateSubject(subjectIndex, (current) => ({
                                     ...current,
                                     assessments: current.assessments.map(
@@ -642,38 +650,83 @@ function Editor({
                                         index === assessmentIndex
                                           ? {
                                               ...item,
-                                              type: event.target
-                                                .value as ConfigAssessment["type"],
+                                              type: nextType,
+                                              id:
+                                                nextType === "지필평가"
+                                                  ? ""
+                                                  : `performance-${assessmentIndex + 1}`,
+                                              title: "",
                                             }
                                           : item,
                                     ),
                                   }))
-                                }
+                                }}
                                 value={assessment.type}
                               >
                                 <option>지필평가</option>
                                 <option>수행평가</option>
                               </select>
-                              <input
-                                aria-label="평가명"
-                                className={inputClass}
-                                onChange={(event) =>
-                                  updateSubject(subjectIndex, (current) => ({
-                                    ...current,
-                                    assessments: current.assessments.map(
-                                      (item, index) =>
-                                        index === assessmentIndex
-                                          ? {
-                                              ...item,
-                                              title: event.target.value,
-                                            }
-                                          : item,
-                                    ),
-                                  }))
-                                }
-                                placeholder="평가명을 입력하세요"
-                                value={assessment.title}
-                              />
+                              {assessment.type === "지필평가" ? (
+                                <select
+                                  aria-label="지필평가명"
+                                  className={inputClass}
+                                  onChange={(event) => {
+                                    const exam = WRITTEN_EXAMS.find(
+                                      (item) => item.id === event.target.value,
+                                    )
+                                    updateSubject(subjectIndex, (current) => ({
+                                      ...current,
+                                      assessments: current.assessments.map(
+                                        (item, index) =>
+                                          index === assessmentIndex
+                                            ? {
+                                                ...item,
+                                                id: exam?.id || "",
+                                                title: exam?.title || "",
+                                              }
+                                            : item,
+                                      ),
+                                    }))
+                                  }}
+                                  value={
+                                    WRITTEN_EXAMS.find(
+                                      (exam) =>
+                                        exam.id === assessment.id &&
+                                        exam.title === assessment.title,
+                                    )?.id || ""
+                                  }
+                                >
+                                  <option disabled value="">
+                                    시험을 선택하세요
+                                  </option>
+                                  {WRITTEN_EXAMS.map((exam) => (
+                                    <option key={exam.id} value={exam.id}>
+                                      {exam.title}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  aria-label="평가명"
+                                  className={inputClass}
+                                  onChange={(event) =>
+                                    updateSubject(subjectIndex, (current) => ({
+                                      ...current,
+                                      assessments: current.assessments.map(
+                                        (item, index) =>
+                                          index === assessmentIndex
+                                            ? {
+                                                ...item,
+                                                title: event.target.value,
+                                              }
+                                            : item,
+                                      ),
+                                    }))
+                                  }
+                                  placeholder="평가명을 입력하세요"
+                                  value={assessment.title}
+                                />
+                              )}
                               <input
                                 aria-label="평가 시기"
                                 className={inputClass}
@@ -733,27 +786,6 @@ function Editor({
                               />
                             </div>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <label className="min-w-48 flex-1">
-                                <span className="sr-only">평가 ID</span>
-                                <input
-                                  className={`${inputClass} h-9 text-xs`}
-                                  onChange={(event) =>
-                                    updateSubject(subjectIndex, (current) => ({
-                                      ...current,
-                                      assessments: current.assessments.map(
-                                        (item, index) =>
-                                          index === assessmentIndex
-                                            ? {
-                                                ...item,
-                                                id: event.target.value.trim(),
-                                              }
-                                            : item,
-                                      ),
-                                    }))
-                                  }
-                                  value={assessment.id}
-                                />
-                              </label>
                               <button
                                 className={secondaryButton}
                                 disabled={assessmentIndex === 0}
@@ -839,9 +871,6 @@ function Editor({
       )}
 
       <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 dark:border-slate-700 sm:flex-row sm:justify-end">
-        <button className={secondaryButton} onClick={saveLocally} type="button">
-          내 계산기에 저장
-        </button>
         {sourceKey && (
           <button
             className={secondaryButton}
@@ -868,40 +897,36 @@ function Editor({
 export default function SchoolManager({
   schools,
   user,
+  isAdmin,
   onClose,
   onSave,
   onDelete,
   onOpen,
   onRequestSignIn,
 }: SchoolManagerProps) {
-  const [view, setView] = useState<"mine" | "browse" | "editor">("mine")
+  const [view, setView] = useState<"mine" | "editor" | "admin">("mine")
   const [editing, setEditing] = useState<{
     config?: SchoolConfig
     sourceKey?: string
     id?: string
   } | null>(null)
-  const [published, setPublished] = useState<PublishedSchoolSummary[]>([])
-  const [browseStatus, setBrowseStatus] =
+  const [published, setPublished] =
+    useState<Awaited<ReturnType<typeof listPublishedSchools>>>([])
+  const [adminStatus, setAdminStatus] =
     useState<"idle" | "loading" | "ready" | "error">("idle")
-  const [query, setQuery] = useState("")
-  const [grade, setGrade] = useState("")
-  const [semester, setSemester] = useState("")
-  const [detail, setDetail] = useState<{
-    key: string
-    config: SchoolConfig
-  } | null>(null)
-  const [detailBusy, setDetailBusy] = useState<string | null>(null)
-  const [browseError, setBrowseError] = useState("")
+  const [busyKey, setBusyKey] = useState<string | null>(null)
+  const [managerError, setManagerError] = useState("")
+  const canCreate = Boolean(user) && (isAdmin || schools.length === 0)
 
   const loadPublished = async () => {
-    setBrowseStatus("loading")
-    setBrowseError("")
+    setAdminStatus("loading")
+    setManagerError("")
     try {
       setPublished(await listPublishedSchools())
-      setBrowseStatus("ready")
+      setAdminStatus("ready")
     } catch (error) {
-      setBrowseStatus("error")
-      setBrowseError(
+      setAdminStatus("error")
+      setManagerError(
         error instanceof Error
           ? error.message
           : "학교 목록을 불러오지 못했습니다.",
@@ -910,33 +935,67 @@ export default function SchoolManager({
   }
 
   useEffect(() => {
-    if (view === "browse" && browseStatus === "idle") void loadPublished()
-  }, [browseStatus, view])
-
-  const filteredPublished = useMemo(
-    () =>
-      published.filter(
-        (school) =>
-          school.schoolName
-            .toLocaleLowerCase("ko")
-            .includes(query.trim().toLocaleLowerCase("ko")) &&
-          (!grade || school.grade === Number(grade)) &&
-          (!semester || school.semester === Number(semester)),
-      ),
-    [grade, published, query, semester],
-  )
+    if (view === "admin" && isAdmin && adminStatus === "idle") {
+      void loadPublished()
+    }
+  }, [adminStatus, isAdmin, view])
 
   const showEditor = (
     config?: SchoolConfig,
     sourceKey?: string,
     id?: string,
   ) => {
-    if (!user && !config) {
+    if (!user) {
       onRequestSignIn()
       return
     }
+    if (!config && !canCreate) return
     setEditing({ config, sourceKey, id })
     setView("editor")
+  }
+
+  const removeSchool = async (school: ManagedSchool) => {
+    if (
+      !window.confirm(
+        `'${school.schoolName} ${school.grade}학년 ${school.semester}학기' 평가계획을 삭제할까요?`,
+      )
+    )
+      return
+    setBusyKey(school.sourceKey || school.id)
+    setManagerError("")
+    try {
+      if (school.sourceKey) await deletePublishedSchool(school.sourceKey)
+      onDelete(school.id)
+    } catch (error) {
+      setManagerError(
+        error instanceof Error ? error.message : "학교를 삭제하지 못했습니다.",
+      )
+    } finally {
+      setBusyKey(null)
+    }
+  }
+
+  const removePublishedSchool = async (schoolKey: string) => {
+    if (!window.confirm(`'${schoolKey}' 평가계획을 서버에서 삭제할까요?`))
+      return
+    setBusyKey(schoolKey)
+    setManagerError("")
+    try {
+      await deletePublishedSchool(schoolKey)
+      setPublished((current) =>
+        current.filter((school) => school.schoolKey !== schoolKey),
+      )
+      const localSchool = schools.find(
+        (school) => school.sourceKey === schoolKey,
+      )
+      if (localSchool) onDelete(localSchool.id)
+    } catch (error) {
+      setManagerError(
+        error instanceof Error ? error.message : "학교를 삭제하지 못했습니다.",
+      )
+    } finally {
+      setBusyKey(null)
+    }
   }
 
   return (
@@ -962,19 +1021,31 @@ export default function SchoolManager({
             >
               내 학교
             </button>
-            <button
-              className={view === "browse" ? primaryButton : secondaryButton}
-              onClick={() => setView("browse")}
-              type="button"
-            >
-              배포된 학교 둘러보기
-            </button>
+            {isAdmin && (
+              <button
+                className={view === "admin" ? primaryButton : secondaryButton}
+                onClick={() => setView("admin")}
+                type="button"
+              >
+                전체 학교 관리
+              </button>
+            )}
             <button
               className={secondaryButton}
+              disabled={!canCreate}
               onClick={() => showEditor()}
+              title={
+                canCreate
+                  ? undefined
+                  : "일반 계정은 학교를 하나만 추가할 수 있습니다."
+              }
               type="button"
             >
-              {user ? "학교 추가" : "로그인 후 학교 추가"}
+              {isAdmin
+                ? "학교 추가"
+                : schools.length > 0
+                  ? "학교 추가 완료"
+                  : "학교 추가"}
             </button>
             <button className={secondaryButton} onClick={onClose} type="button">
               닫기
@@ -983,6 +1054,12 @@ export default function SchoolManager({
         </header>
 
         <main className="p-5 sm:p-8">
+          {managerError && (
+            <div className="mb-5 rounded-xl bg-rose-50 p-4 font-bold text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">
+              {managerError}
+            </div>
+          )}
+
           {view === "editor" && (
             <Editor
               initial={editing?.config}
@@ -1008,23 +1085,28 @@ export default function SchoolManager({
                 <div>
                   <h2 className="text-2xl font-black">내가 추가한 학교</h2>
                   <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                    설정과 개인 점수는 분리되어 저장됩니다. 삭제해도 서버의 공유
-                    설정은 삭제되지 않습니다.
+                    일반 계정은 한 개의 학교만 추가할 수 있습니다.
+                    {isAdmin && " 관리자는 학교 추가 수에 제한이 없습니다."}
                   </p>
                 </div>
                 <button
                   className={primaryButton}
+                  disabled={!canCreate}
                   onClick={() => showEditor()}
                   type="button"
                 >
-                  {user ? "새 학교 만들기" : "로그인 후 학교 만들기"}
+                  {isAdmin
+                    ? "새 학교 만들기"
+                    : schools.length > 0
+                      ? "학교 1개 등록 완료"
+                      : "새 학교 만들기"}
                 </button>
               </div>
               {schools.length === 0 ? (
                 <div className="mt-6 rounded-2xl border border-dashed border-slate-300 p-10 text-center dark:border-slate-700">
                   <p className="font-extrabold">추가한 학교가 없습니다.</p>
                   <p className="mt-2 text-sm text-slate-400">
-                    직접 만들거나 배포된 학교를 둘러보세요.
+                    학교를 추가해 평가계획을 배포하세요.
                   </p>
                 </div>
               ) : (
@@ -1036,10 +1118,7 @@ export default function SchoolManager({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h3
-                            className="truncate text-lg font-black"
-                            title={school.schoolName}
-                          >
+                          <h3 className="truncate text-lg font-black">
                             {school.schoolName}
                           </h3>
                           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -1050,11 +1129,6 @@ export default function SchoolManager({
                             학교 코드 {school.schoolCode}
                           </p>
                         </div>
-                        {school.sourceKey && (
-                          <span className="shrink-0 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">
-                            공유 설정
-                          </span>
-                        )}
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button
@@ -1074,18 +1148,14 @@ export default function SchoolManager({
                           편집
                         </button>
                         <button
-                          className="rounded-xl px-4 py-2.5 text-sm font-extrabold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `'${school.schoolName} ${school.grade}학년 ${school.semester}학기'를 내 계산기에서 삭제할까요? 개인 점수도 이 기기에서 삭제됩니다.`,
-                              )
-                            )
-                              onDelete(school.id)
-                          }}
+                          className="rounded-xl px-4 py-2.5 text-sm font-extrabold text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:hover:bg-rose-500/10"
+                          disabled={busyKey === (school.sourceKey || school.id)}
+                          onClick={() => void removeSchool(school)}
                           type="button"
                         >
-                          삭제
+                          {busyKey === (school.sourceKey || school.id)
+                            ? "삭제 중..."
+                            : "삭제"}
                         </button>
                       </div>
                     </article>
@@ -1095,189 +1165,54 @@ export default function SchoolManager({
             </div>
           )}
 
-          {view === "browse" && (
+          {view === "admin" && isAdmin && (
             <div>
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h2 className="text-2xl font-black">배포된 학교 둘러보기</h2>
+                  <h2 className="text-2xl font-black">전체 학교 관리</h2>
                   <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                    다른 사용자가 공유한 평가 계획을 미리 보고 내 계산기에
-                    추가할 수 있습니다.
+                    관리자는 배포된 모든 학교 평가계획을 삭제할 수 있습니다.
                   </p>
                 </div>
                 <button
                   className={secondaryButton}
-                  disabled={browseStatus === "loading"}
-                  onClick={loadPublished}
+                  disabled={adminStatus === "loading"}
+                  onClick={() => void loadPublished()}
                   type="button"
                 >
-                  목록 새로고침
+                  새로고침
                 </button>
               </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_9rem_9rem]">
-                <input
-                  className={inputClass}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="학교명 검색"
-                  value={query}
-                />
-                <select
-                  className={inputClass}
-                  onChange={(event) => setGrade(event.target.value)}
-                  value={grade}
-                >
-                  <option value="">전체 학년</option>
-                  {[1, 2, 3].map((item) => (
-                    <option key={item} value={item}>
-                      {item}학년
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className={inputClass}
-                  onChange={(event) => setSemester(event.target.value)}
-                  value={semester}
-                >
-                  <option value="">전체 학기</option>
-                  <option value="1">1학기</option>
-                  <option value="2">2학기</option>
-                </select>
-              </div>
-              {browseStatus === "loading" && (
+              {adminStatus === "loading" && (
                 <div className="py-16 text-center font-bold text-slate-400">
                   학교 목록을 불러오는 중...
                 </div>
               )}
-              {browseStatus === "error" && (
-                <div className="mt-5 rounded-xl bg-rose-50 p-4 font-bold text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">
-                  {browseError}
-                </div>
-              )}
-              {browseStatus === "ready" && (
-                <div className="mt-5 space-y-3">
-                  {filteredPublished.length === 0 && (
-                    <div className="py-14 text-center text-slate-400">
-                      조건에 맞는 학교 설정이 없습니다.
-                    </div>
-                  )}
-                  {filteredPublished.map((school) => (
+              {adminStatus === "ready" && (
+                <div className="mt-6 space-y-3">
+                  {published.map((school) => (
                     <article
-                      className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700"
+                      className="flex flex-col gap-4 rounded-2xl border border-slate-200 p-5 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between"
                       key={school.schoolKey}
                     >
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0">
-                          <h3 className="truncate text-lg font-black">
-                            {school.schoolName}
-                          </h3>
-                          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                            {school.grade}학년 {school.semester}학기 · 학교 코드{" "}
-                            {school.schoolCode}
-                          </p>
-                        </div>
-                        <button
-                          className={secondaryButton}
-                          disabled={detailBusy === school.schoolKey}
-                          onClick={async () => {
-                            setDetailBusy(school.schoolKey)
-                            setBrowseError("")
-                            try {
-                              setDetail({
-                                key: school.schoolKey,
-                                config: await getPublishedSchool(
-                                  school.schoolKey,
-                                ),
-                              })
-                            } catch (error) {
-                              setBrowseError(
-                                error instanceof Error
-                                  ? error.message
-                                  : "상세 설정을 불러오지 못했습니다.",
-                              )
-                            } finally {
-                              setDetailBusy(null)
-                            }
-                          }}
-                          type="button"
-                        >
-                          {detailBusy === school.schoolKey
-                            ? "불러오는 중..."
-                            : "과목 정보 보기"}
-                        </button>
+                      <div>
+                        <h3 className="font-black">{school.schoolName}</h3>
+                        <p className="mt-1 text-sm text-slate-400">
+                          {school.schoolKey}
+                        </p>
                       </div>
+                      <button
+                        className="rounded-xl px-4 py-2.5 text-sm font-extrabold text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:hover:bg-rose-500/10"
+                        disabled={busyKey === school.schoolKey}
+                        onClick={() =>
+                          void removePublishedSchool(school.schoolKey)
+                        }
+                        type="button"
+                      >
+                        {busyKey === school.schoolKey ? "삭제 중..." : "삭제"}
+                      </button>
                     </article>
                   ))}
-                </div>
-              )}
-              {detail && (
-                <div className="mt-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50/40 p-5 dark:border-indigo-500/30 dark:bg-indigo-500/5 sm:p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-xs font-black text-indigo-600 dark:text-indigo-300">
-                        학교 설정 상세
-                      </p>
-                      <h3 className="mt-1 text-xl font-black">
-                        {detail.config.schoolName} · {detail.config.grade}학년{" "}
-                        {detail.config.semester}학기
-                      </h3>
-                    </div>
-                    <button
-                      className={secondaryButton}
-                      onClick={() => setDetail(null)}
-                      type="button"
-                    >
-                      상세 닫기
-                    </button>
-                  </div>
-                  <div className="mt-5 grid gap-3 md:grid-cols-2">
-                    {detail.config.subjects.map((subject) => (
-                      <div
-                        className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
-                        key={subject.id}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`size-2.5 rounded-full ${subject.color}`}
-                          />
-                          <p className="font-extrabold">{subject.name}</p>
-                          <span className="ml-auto text-xs font-bold text-slate-400">
-                            {subject.passOnly
-                              ? "원점수 미산출"
-                              : `${subject.assessments.length}개 평가`}
-                          </span>
-                        </div>
-                        {!subject.passOnly && (
-                          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                            {subject.assessments
-                              .map((item) => `${item.title} ${item.weight}%`)
-                              .join(" · ")}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
-                    <button
-                      className={secondaryButton}
-                      onClick={() => showEditor(detail.config, detail.key)}
-                      type="button"
-                    >
-                      내 설정이면 수정 시도
-                    </button>
-                    <button
-                      className={primaryButton}
-                      onClick={() => {
-                        onSave(detail.config, detail.key)
-                        setView("mine")
-                      }}
-                      type="button"
-                    >
-                      내 계산기에 추가하기
-                    </button>
-                  </div>
-                  <p className="mt-3 text-right text-xs text-slate-400">
-                    소유 여부는 서버의 수정 응답으로 확인합니다.
-                  </p>
                 </div>
               )}
             </div>
