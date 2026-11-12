@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { parseSubjectPlans } from "./schoolImport"
+import { parseSubjectPlan } from "./schoolImport"
 import type { User } from "firebase/auth"
 import {
   deletePublishedSchool,
@@ -261,8 +261,7 @@ function Editor({
       : null,
   )
   const [busy, setBusy] = useState<"publish" | "update" | null>(null)
-  const [importPlans, setImportPlans] = useState<ConfigSubject[][]>([])
-  const [importIndex, setImportIndex] = useState(0)
+  const [importPlan, setImportPlan] = useState<ConfigSubject[]>([])
   const [importName, setImportName] = useState("")
   const [importBusy, setImportBusy] = useState(false)
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({})
@@ -503,13 +502,13 @@ function Editor({
         <section className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 dark:border-indigo-500/30 dark:bg-indigo-500/5 sm:p-5">
           <h3 className="font-extrabold">JSON으로 평가계획 가져오기</h3>
           <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-            첨부 양식의 과목 배열을 지원합니다. 따옴표 없는 키, 마지막 쉼표,
-            여러 배열도 읽을 수 있습니다. 학교·학년·학기는 위에서 선택해 주세요.
-            가져온 뒤 확인하고 배포해야 서버에 저장됩니다.
+            첨부 양식과 같은 하나의 JSON 과목 배열을 선택해 주세요.
+            학교·학년·학기는 위에서 선택하고, 가져온 내용을 확인한 뒤 배포해야
+            서버에 저장됩니다.
           </p>
           <input
             aria-label="평가계획 JSON 파일"
-            accept=".json,.json5,application/json"
+            accept=".json,application/json"
             className="mt-4 block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-indigo-600 file:px-4 file:py-2.5 file:font-bold file:text-white"
             disabled={busy !== null || importBusy}
             type="file"
@@ -518,18 +517,17 @@ function Editor({
               event.target.value = ""
               if (!file) return
               setImportBusy(true)
-              setImportPlans([])
+              setImportPlan([])
               setImportName("")
               try {
                 if (file.size > 1024 * 1024)
                   throw new Error("파일은 최대 1MB까지 불러올 수 있습니다.")
-                const plans = parseSubjectPlans(await file.text())
-                setImportPlans(plans)
-                setImportIndex(0)
+                const plan = parseSubjectPlan(await file.text())
+                setImportPlan(plan)
                 setImportName(file.name)
                 setMessage({
                   tone: "info",
-                  text: `${plans.length}개의 평가계획을 찾았습니다. 적용할 평가계획을 선택해 주세요.`,
+                  text: `${plan.length}개 과목을 불러왔습니다. 내용을 확인한 뒤 편집기에 적용해 주세요.`,
                 })
               } catch (error) {
                 setMessage({
@@ -549,32 +547,13 @@ function Editor({
               파일을 읽는 중...
             </p>
           )}
-          {importPlans.length > 0 && (
+          {importPlan.length > 0 && (
             <div className="mt-4 space-y-3">
-              <label className="block text-sm font-bold">
-                {importName} · 적용할 평가계획
-                <select
-                  className={`${inputClass} mt-2`}
-                  value={importIndex}
-                  onChange={(event) =>
-                    setImportIndex(Number(event.target.value))
-                  }
-                >
-                  {importPlans.map((subjects, index) => (
-                    <option key={index} value={index}>
-                      평가계획 {index + 1} · {subjects.length}과목 ·{" "}
-                      {subjects
-                        .slice(0, 4)
-                        .map((subject) => subject.name)
-                        .join(", ")}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <p className="text-sm font-bold">
+                {importName} · {importPlan.length}과목
+              </p>
               <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
-                {importPlans[importIndex]
-                  .map((subject) => subject.name)
-                  .join(" · ")}
+                {importPlan.map((subject) => subject.name).join(" · ")}
               </p>
               <button
                 className={secondaryButton}
@@ -590,16 +569,16 @@ function Editor({
                     return
                   setConfig((current) => ({
                     ...current,
-                    subjects: importPlans[importIndex],
+                    subjects: importPlan,
                   }))
                   setCollapsed({})
                   setMessage({
                     tone: "success",
-                    text: `평가계획 ${importIndex + 1}의 ${importPlans[importIndex].length}과목을 편집기에 적용했습니다. 학교·학년·학기를 확인한 후 배포해 주세요.`,
+                    text: `${importPlan.length}과목을 편집기에 적용했습니다. 학교·학년·학기를 확인한 후 배포해 주세요.`,
                   })
                 }}
               >
-                선택한 평가계획 적용
+                평가계획 적용
                 {config.subjects.length > 0 ? " (현재 과목 교체)" : ""}
               </button>
             </div>
@@ -1260,10 +1239,10 @@ export default function SchoolManager({
     <div
       aria-label="내 학교 관리"
       aria-modal="true"
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-hidden bg-slate-950/60 p-3 backdrop-blur-sm sm:p-6"
       role="dialog"
     >
-      <div className="mx-auto min-h-full max-w-6xl rounded-3xl bg-white text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-white">
+      <div className="max-h-[calc(100vh-1.5rem)] w-full max-w-6xl overflow-y-auto rounded-3xl bg-white text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-white sm:max-h-[calc(100vh-3rem)]">
         <header className="sticky top-0 z-30 flex flex-col gap-4 rounded-t-3xl border-b border-slate-200 bg-white/95 px-5 py-5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div>
             <p className="text-xs font-black tracking-[0.15em] text-indigo-600 dark:text-indigo-300">
