@@ -157,6 +157,8 @@ function validateConfig(config: SchoolConfig) {
   if (config.semester !== 1 && config.semester !== 2)
     return "학기를 선택해 주세요."
   if (config.subjects.length === 0) return "과목을 한 개 이상 추가해 주세요."
+  if (config.subjects.length > 20)
+    return "과목은 최대 20개까지 추가할 수 있습니다."
   for (const subject of config.subjects) {
     if (!subject.name.trim()) return "모든 과목의 이름을 입력해 주세요."
     if (subject.passOnly) {
@@ -166,6 +168,11 @@ function validateConfig(config: SchoolConfig) {
     }
     if (subject.assessments.length === 0)
       return `${subject.name}: 평가 항목을 한 개 이상 추가해 주세요.`
+    if (
+      subject.assessments.filter((assessment) => assessment.type === "수행평가")
+        .length > 5
+    )
+      return `${subject.name}: 수행평가는 최대 5개까지 추가할 수 있습니다.`
     const assessmentIds = new Set<string>()
     for (const assessment of subject.assessments) {
       if (
@@ -425,7 +432,7 @@ function Editor({
                           setConfig((current) => ({
                             ...current,
                             schoolCode: school.schoolcode,
-                            schoolName: school.shortname || school.name,
+                            schoolName: school.name,
                           }))
                           setSchoolQuery(school.name)
                         }}
@@ -498,6 +505,7 @@ function Editor({
           </div>
           <button
             className={primaryButton}
+            disabled={config.subjects.length >= 20}
             onClick={() =>
               setConfig((current) => ({
                 ...current,
@@ -508,8 +516,13 @@ function Editor({
               }))
             }
             type="button"
+            title={
+              config.subjects.length >= 20
+                ? "과목은 최대 20개까지 추가할 수 있습니다."
+                : undefined
+            }
           >
-            과목 추가
+            과목 추가 ({config.subjects.length}/20)
           </button>
         </div>
 
@@ -639,6 +652,26 @@ function Editor({
 
                 {!subject.passOnly && (
                   <div className="mt-4">
+                    <label className="mb-4 flex items-start gap-3 rounded-xl bg-white p-3 text-sm font-bold dark:bg-slate-900">
+                      <input
+                        checked={subject.hideAssessmentDetails === true}
+                        className="mt-0.5 size-4 accent-indigo-600"
+                        onChange={(event) =>
+                          updateSubject(subjectIndex, (current) => ({
+                            ...current,
+                            hideAssessmentDetails:
+                              event.target.checked || undefined,
+                          }))
+                        }
+                        type="checkbox"
+                      />
+                      <span>
+                        지필·수행 내용 숨김
+                        <span className="mt-1 block font-normal text-slate-400">
+                          계산기에서 평가명과 평가 시기를 표시하지 않습니다.
+                        </span>
+                      </span>
+                    </label>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p
                         className={`text-sm font-extrabold ${
@@ -651,6 +684,12 @@ function Editor({
                         {(["지필평가", "수행평가"] as const).map((type) => (
                           <button
                             className={secondaryButton}
+                            disabled={
+                              type === "수행평가" &&
+                              subject.assessments.filter(
+                                (assessment) => assessment.type === "수행평가",
+                              ).length >= 5
+                            }
                             key={type}
                             onClick={() =>
                               updateSubject(subjectIndex, (current) => ({
@@ -667,6 +706,9 @@ function Editor({
                             type="button"
                           >
                             {type} 추가
+                            {type === "수행평가"
+                              ? ` (${subject.assessments.filter((assessment) => assessment.type === "수행평가").length}/5)`
+                              : ""}
                           </button>
                         ))}
                       </div>
@@ -1127,11 +1169,6 @@ export default function SchoolManager({
               className={secondaryButton}
               disabled={!canCreate}
               onClick={() => showEditor()}
-              title={
-                canCreate
-                  ? undefined
-                  : "일반 계정은 학교를 하나만 추가할 수 있습니다."
-              }
               type="button"
             >
               {isAdmin
@@ -1178,9 +1215,6 @@ export default function SchoolManager({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-black">내가 추가한 학교</h2>
-                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                    일반 계정은 한 개의 학교만 추가할 수 있습니다.
-                  </p>
                 </div>
                 <button
                   className={primaryButton}

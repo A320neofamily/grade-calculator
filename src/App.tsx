@@ -5,6 +5,7 @@ import { auth, googleProvider } from "./firebase"
 import { loadUserData, saveUserData, type UserData } from "./userDataApi"
 import VisitorStats from "./VisitorStats"
 import SchoolManager from "./SchoolManager"
+import MarkdownDialog from "./MarkdownDialog"
 import {
   getPublishedSchool,
   getSchoolKey,
@@ -29,6 +30,7 @@ type Subject = {
   color: string
   assessments: Assessment[]
   passOnly?: boolean
+  hideAssessmentDetails?: boolean
 }
 
 type Scores = Record<string, string>
@@ -3695,6 +3697,19 @@ function readStoredScores(storageKey: string): Scores {
   }
 }
 
+function compactUserData(data: UserData): UserData {
+  return Object.fromEntries(
+    Object.entries(data).flatMap(([schoolId, scores]) => {
+      const enteredScores = Object.fromEntries(
+        Object.entries(scores).filter(([, value]) => value !== ""),
+      )
+      return Object.keys(enteredScores).length > 0
+        ? [[schoolId, enteredScores]]
+        : []
+    }),
+  )
+}
+
 function scoreKey(subjectId: string, assessmentId: string) {
   return `${subjectId}.${assessmentId}`
 }
@@ -3832,8 +3847,6 @@ export default function App() {
   )
   const [publishedSchools, setPublishedSchools] =
     useState<PublishedSchoolSummary[]>([])
-  const [schoolShortNames, setSchoolShortNames] =
-    useState<Record<string, string>>({})
   const [schoolSearchStatus, setSchoolSearchStatus] =
     useState<"loading" | "ready" | "error">("loading")
   const [schoolSearchError, setSchoolSearchError] = useState("")
@@ -3853,6 +3866,13 @@ export default function App() {
   const [schoolManagerInitialView, setSchoolManagerInitialView] =
     useState<"mine" | "editor">("mine")
   const [openManagerAfterSignIn, setOpenManagerAfterSignIn] = useState(false)
+  const [showPrivacyConsent, setShowPrivacyConsent] = useState(false)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [showNotice, setShowNotice] = useState(
+    () =>
+      localStorage.getItem(`grade-calculator-notice-hidden:${appVersion}`) !==
+      "true",
+  )
   const [user, setUser] = useState<User | null>(null)
   const isAdmin =
     Boolean(import.meta.env.VITE_MASTER_UID) &&
@@ -3867,6 +3887,7 @@ export default function App() {
   const syncUserIdRef = useRef<string | null>(null)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saveQueueRef = useRef(Promise.resolve())
+  const oneTapOpenedRef = useRef(false)
 
   useEffect(() => {
     const root = document.documentElement
@@ -3890,38 +3911,6 @@ export default function App() {
           "배포된 평가계획을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
         )
       })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    fetch(`${import.meta.env.BASE_URL}schoolinfo.json`)
-      .then(async (response) => {
-        if (!response.ok) throw new Error()
-        const data = (await response.json()) as unknown
-        if (!Array.isArray(data)) throw new Error()
-        if (cancelled) return
-        setSchoolShortNames(
-          Object.fromEntries(
-            data.flatMap((item) => {
-              if (
-                typeof item !== "object" ||
-                item === null ||
-                typeof (item as Record<string, unknown>).schoolcode !==
-                  "string" ||
-                typeof (item as Record<string, unknown>).shortname !== "string"
-              ) {
-                return []
-              }
-              const record = item as Record<string, string>
-              return [[record.schoolcode, record.shortname]]
-            }),
-          ),
-        )
-      })
-      .catch(() => undefined)
     return () => {
       cancelled = true
     }
@@ -3966,7 +3955,7 @@ export default function App() {
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
-      const dataToSave = scoresRef.current
+      const dataToSave = compactUserData(scoresRef.current)
       setSyncStatus("saving")
       saveQueueRef.current = saveQueueRef.current
         .catch(() => undefined)
@@ -4048,6 +4037,19 @@ export default function App() {
   }, [activeSchoolId, allSchools, isAdmin])
 
   async function handleSignIn() {
+    setPrivacyAccepted(false)
+    setShowPrivacyConsent(true)
+  }
+
+  function cancelSignIn() {
+    setShowPrivacyConsent(false)
+    setPrivacyAccepted(false)
+    setOpenManagerAfterSignIn(false)
+  }
+
+  async function completeSignIn() {
+    if (!privacyAccepted) return
+    setShowPrivacyConsent(false)
     setSyncStatus("loading")
     try {
       await signInWithPopup(auth, googleProvider)
@@ -4152,12 +4154,15 @@ export default function App() {
     setShowSchoolManager(false)
   }
 
-  async function openPublishedSchool(schoolKey: string) {
+  async function openPublishedSchool(
+    schoolKey: string,
+    allowRestricted = false,
+  ) {
     setOpeningSchoolKey(schoolKey)
     setSchoolSearchError("")
     try {
       const config = await getPublishedSchool(schoolKey)
-      if (config.schoolCode === "0000000" && !isAdmin) {
+      if (config.schoolCode === "0000000" && !isAdmin && !allowRestricted) {
         setSchoolSearchError("이 평가계획은 허용된 계정에서만 열 수 있습니다.")
         return
       }
@@ -4188,6 +4193,92 @@ export default function App() {
       setOpeningSchoolKey(null)
     }
   }
+
+  useEffect(() => {
+    if (
+      oneTapOpenedRef.current ||
+      schoolSearchStatus === "loading" ||
+      !/\/onetap\/?$/.test(window.location.pathname)
+    )
+      return
+    const params = new URLSearchParams(window.location.search)
+    const schoolKey = (params.get("schooid") || params.get("schoolid"))?.trim()
+    if (!schoolKey || !/^\d+-[1-3]-[1-2]$/.test(schoolKey)) return
+    oneTapOpenedRef.current = true
+    void openPublishedSchool(schoolKey, true)
+  }, [schoolSearchStatus])
+
+  const noticeDialog = showNotice ? (
+    <MarkdownDialog
+      actions={
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            onClick={() => {
+              localStorage.setItem(
+                `grade-calculator-notice-hidden:${appVersion}`,
+                "true",
+              )
+              setShowNotice(false)
+            }}
+            type="button"
+          >
+            다시 보지 않기
+          </button>
+          <button
+            className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-indigo-700"
+            onClick={() => setShowNotice(false)}
+            type="button"
+          >
+            확인
+          </button>
+        </div>
+      }
+      onClose={() => setShowNotice(false)}
+      source={`${import.meta.env.BASE_URL}notice.md`}
+      title="공지사항"
+    />
+  ) : null
+
+  const privacyDialog = showPrivacyConsent ? (
+    <MarkdownDialog
+      actions={
+        <div className="space-y-3">
+          <label className="flex items-start gap-3 text-sm font-bold text-slate-700 dark:text-slate-200">
+            <input
+              checked={privacyAccepted}
+              className="mt-0.5 size-4 accent-indigo-600"
+              onChange={(event) => setPrivacyAccepted(event.target.checked)}
+              type="checkbox"
+            />
+            개인정보처리방침을 확인했으며 Google 로그인과 입력 데이터 클라우드
+            동기화에 동의합니다.
+          </label>
+          <div className="flex gap-2 sm:justify-end">
+            <button
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              onClick={cancelSignIn}
+              type="button"
+            >
+              취소
+            </button>
+            <button
+              className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
+              disabled={!privacyAccepted}
+              onClick={() => void completeSignIn()}
+              type="button"
+            >
+              동의하고 Google 로그인
+            </button>
+          </div>
+        </div>
+      }
+      ariaLabel="로그인 전 개인정보 수집 및 이용 동의"
+      onClose={cancelSignIn}
+      source={`${import.meta.env.BASE_URL}privacy.md`}
+      title="개인정보처리방침 및 로그인 동의"
+    />
+  ) : null
 
   const themeControl = (
     <button
@@ -4391,10 +4482,7 @@ export default function App() {
   }
 
   const activeSchool = allSchools.find((school) => school.id === activeSchoolId)
-  const activeSchoolDisplayName = activeSchool
-    ? (activeSchool.schoolCode && schoolShortNames[activeSchool.schoolCode]) ||
-      activeSchool.shortName
-    : ""
+  const activeSchoolDisplayName = activeSchool ? activeSchool.shortName : ""
   async function shareSchool(school: School) {
     const schoolId =
       school.sourceKey ||
@@ -4410,7 +4498,7 @@ export default function App() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `${(school.schoolCode && schoolShortNames[school.schoolCode]) || school.shortName} 평가계획`,
+          title: `${school.shortName} 평가계획`,
           text: "평가계획을 확인해 보세요.",
           url: url.toString(),
         })
@@ -4468,6 +4556,8 @@ export default function App() {
   if (!activeSchool) {
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-100 px-5 py-12 text-slate-950 transition-colors dark:bg-slate-950 dark:text-white">
+        {noticeDialog}
+        {privacyDialog}
         {schoolManager}
         <div className="absolute right-5 top-5 z-10 sm:right-8 sm:top-8">
           {themeControl}
@@ -4547,10 +4637,7 @@ export default function App() {
                     kind: "local" as const,
                     id: school.id,
                     key: school.id,
-                    name:
-                      (school.schoolCode &&
-                        schoolShortNames[school.schoolCode]) ||
-                      school.shortName,
+                    name: school.shortName,
                     grade: school.grade || 2,
                     semester: school.semester || 2,
                     code: school.sourceKey || school.schoolCode,
@@ -4559,8 +4646,7 @@ export default function App() {
                     kind: "published" as const,
                     id: school.schoolKey,
                     key: school.schoolKey,
-                    name:
-                      schoolShortNames[school.schoolCode] || school.schoolName,
+                    name: school.schoolName,
                     grade: school.grade,
                     semester: school.semester,
                     code: school.schoolKey,
@@ -4656,6 +4742,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
+      {noticeDialog}
+      {privacyDialog}
       {schoolManager}
       <header className="border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-4 sm:px-8">
@@ -5029,11 +5117,17 @@ export default function App() {
                               >
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">
-                                    {item.title}
+                                    {activeSubject.hideAssessmentDetails
+                                      ? `${type} ${items.indexOf(item) + 1}`
+                                      : item.title}
                                   </p>
                                   <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-400">
-                                    <span>{item.period}</span>
-                                    <span className="size-1 rounded-full bg-slate-300" />
+                                    {!activeSubject.hideAssessmentDetails && (
+                                      <>
+                                        <span>{item.period}</span>
+                                        <span className="size-1 rounded-full bg-slate-300" />
+                                      </>
+                                    )}
                                     <span className="font-semibold text-indigo-600 dark:text-[#aab2cc]">
                                       {item.weight}% 반영
                                     </span>
@@ -5052,7 +5146,10 @@ export default function App() {
                                 </div>
                                 <label className="relative block">
                                   <span className="sr-only">
-                                    {item.title} 점수
+                                    {activeSubject.hideAssessmentDetails
+                                      ? `${type} ${items.indexOf(item) + 1}`
+                                      : item.title}{" "}
+                                    점수
                                   </span>
                                   <input
                                     className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-12 text-right text-base font-extrabold tabular-nums outline-none transition placeholder:font-medium placeholder:text-slate-300 hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-600 dark:hover:border-slate-600 dark:focus:border-indigo-400 dark:focus:bg-slate-800 dark:focus:ring-indigo-900/50"

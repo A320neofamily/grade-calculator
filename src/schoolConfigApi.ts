@@ -17,6 +17,7 @@ export type ConfigSubject = {
   color: string
   assessments: ConfigAssessment[]
   passOnly?: boolean
+  hideAssessmentDetails?: boolean
 }
 
 export type SchoolConfig = {
@@ -96,7 +97,8 @@ export function parseSchoolConfig(value: unknown): SchoolConfig | null {
     grade > 3 ||
     (semester !== 1 && semester !== 2) ||
     !Array.isArray(value.subjects) ||
-    value.subjects.length === 0
+    value.subjects.length === 0 ||
+    value.subjects.length > 20
   )
     return null
 
@@ -108,6 +110,7 @@ export function parseSchoolConfig(value: unknown): SchoolConfig | null {
     const name = readString(item, "name")
     const color = readString(item, "color")
     const passOnly = item.passOnly === true
+    const hideAssessmentDetails = item.hideAssessmentDetails === true
     if (
       !id ||
       !name ||
@@ -145,6 +148,11 @@ export function parseSchoolConfig(value: unknown): SchoolConfig | null {
 
     if (passOnly && assessments.length > 0) return null
     if (
+      assessments.filter((assessment) => assessment.type === "수행평가")
+        .length > 5
+    )
+      return null
+    if (
       !passOnly &&
       (assessments.length === 0 ||
         Math.abs(
@@ -159,6 +167,7 @@ export function parseSchoolConfig(value: unknown): SchoolConfig | null {
       color,
       assessments,
       ...(passOnly ? { passOnly: true } : {}),
+      ...(hideAssessmentDetails ? { hideAssessmentDetails: true } : {}),
     })
   }
 
@@ -223,7 +232,7 @@ async function authorizedRequest(
       401,
       "학교 설정을 배포하려면 Google 로그인이 필요합니다.",
     )
-  const token = await user.getIdToken()
+  const token = await user.getIdToken(true)
   const response = await fetch(`${SCHOOL_CONFIG_API_URL}${path}`, {
     method,
     headers: {
@@ -269,7 +278,7 @@ export async function deletePublishedSchool(schoolKey: string) {
       401,
       "학교 설정을 삭제하려면 Google 로그인이 필요합니다.",
     )
-  const token = await user.getIdToken()
+  const token = await user.getIdToken(true)
   const response = await fetch(
     `${SCHOOL_CONFIG_API_URL}/api/schools/${encodeURIComponent(schoolKey)}`,
     {
