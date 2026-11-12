@@ -3738,7 +3738,7 @@ function Icon({
   name,
   className = "size-5",
 }: {
-  name: "book" | "chart" | "check" | "spark" | "trash" | "arrow" | "sun" | "moon"
+  name: "book" | "chart" | "check" | "spark" | "trash" | "arrow" | "sun" | "moon" | "share"
   className?: string
 }) {
   const paths = {
@@ -3785,6 +3785,14 @@ function Icon({
     moon: (
       <path d="M20.5 14.1A8.5 8.5 0 0 1 9.9 3.5 8.5 8.5 0 1 0 20.5 14.1Z" />
     ),
+    share: (
+      <>
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4" />
+      </>
+    ),
   }
 
   return (
@@ -3824,6 +3832,8 @@ export default function App() {
   )
   const [publishedSchools, setPublishedSchools] =
     useState<PublishedSchoolSummary[]>([])
+  const [schoolShortNames, setSchoolShortNames] =
+    useState<Record<string, string>>({})
   const [schoolSearchStatus, setSchoolSearchStatus] =
     useState<"loading" | "ready" | "error">("loading")
   const [schoolSearchError, setSchoolSearchError] = useState("")
@@ -3840,7 +3850,13 @@ export default function App() {
       ),
     )
   const [showSchoolManager, setShowSchoolManager] = useState(false)
+  const [schoolManagerInitialView, setSchoolManagerInitialView] =
+    useState<"mine" | "editor">("mine")
+  const [openManagerAfterSignIn, setOpenManagerAfterSignIn] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const isAdmin =
+    Boolean(import.meta.env.VITE_MASTER_UID) &&
+    user?.uid === import.meta.env.VITE_MASTER_UID
   const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "error">(
     "idle",
   )
@@ -3874,6 +3890,38 @@ export default function App() {
           "배포된 평가계획을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
         )
       })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`${import.meta.env.BASE_URL}schoolinfo.json`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error()
+        const data = (await response.json()) as unknown
+        if (!Array.isArray(data)) throw new Error()
+        if (cancelled) return
+        setSchoolShortNames(
+          Object.fromEntries(
+            data.flatMap((item) => {
+              if (
+                typeof item !== "object" ||
+                item === null ||
+                typeof (item as Record<string, unknown>).schoolcode !==
+                  "string" ||
+                typeof (item as Record<string, unknown>).shortname !== "string"
+              ) {
+                return []
+              }
+              const record = item as Record<string, string>
+              return [[record.schoolcode, record.shortname]]
+            }),
+          ),
+        )
+      })
+      .catch(() => undefined)
     return () => {
       cancelled = true
     }
@@ -3986,6 +4034,19 @@ export default function App() {
     return unsubscribe
   }, [])
 
+  useEffect(() => {
+    if (!user || !openManagerAfterSignIn) return
+    setOpenManagerAfterSignIn(false)
+    setSchoolManagerInitialView("editor")
+    setShowSchoolManager(true)
+  }, [openManagerAfterSignIn, user])
+
+  useEffect(() => {
+    if (isAdmin || !activeSchoolId) return
+    const selected = allSchools.find((school) => school.id === activeSchoolId)
+    if (selected?.schoolCode === "0000000") setActiveSchoolId(null)
+  }, [activeSchoolId, allSchools, isAdmin])
+
   async function handleSignIn() {
     setSyncStatus("loading")
     try {
@@ -4009,6 +4070,22 @@ export default function App() {
       localStorage.setItem("grade-calculator-theme", nextTheme)
       return nextTheme
     })
+  }
+
+  function openSchoolManager(view: "mine" | "editor" = "mine") {
+    setSchoolManagerInitialView(view)
+    setShowSchoolManager(true)
+  }
+
+  async function requestSchoolAddition() {
+    if (user) {
+      openSchoolManager(
+        isAdmin || customSchools.length === 0 ? "editor" : "mine",
+      )
+      return
+    }
+    setOpenManagerAfterSignIn(true)
+    await handleSignIn()
   }
 
   function saveCustomSchool(
@@ -4080,6 +4157,10 @@ export default function App() {
     setSchoolSearchError("")
     try {
       const config = await getPublishedSchool(schoolKey)
+      if (config.schoolCode === "0000000" && !isAdmin) {
+        setSchoolSearchError("이 평가계획은 허용된 계정에서만 열 수 있습니다.")
+        return
+      }
       const nextSchool = configToSchool(config, schoolKey)
       setTransientSchools((current) => [
         ...current.filter((school) => school.id !== nextSchool.id),
@@ -4096,6 +4177,7 @@ export default function App() {
           nextSchool.subjects[0].id,
       )
       setActiveSchoolId(nextSchool.id)
+      setShowSchoolManager(false)
     } catch (error) {
       setSchoolSearchError(
         error instanceof Error
@@ -4162,17 +4244,20 @@ export default function App() {
       )}
     </div>
   )
-  const isAdmin =
-    Boolean(import.meta.env.VITE_MASTER_UID) &&
-    user?.uid === import.meta.env.VITE_MASTER_UID
   const schoolManager = showSchoolManager ? (
     <SchoolManager
+      initialView={schoolManagerInitialView}
       isAdmin={isAdmin}
       onClose={() => setShowSchoolManager(false)}
       onDelete={deleteCustomSchool}
       onOpen={openSchool}
+      onOpenPublished={(schoolKey) => void openPublishedSchool(schoolKey)}
       onRequestSignIn={handleSignIn}
       onSave={saveCustomSchool}
+      onShare={(id) => {
+        const school = allSchools.find((item) => item.id === id)
+        if (school) void shareSchool(school)
+      }}
       schools={customSchools.map((school) => ({
         ...schoolToConfig(school),
         id: school.id,
@@ -4306,6 +4391,10 @@ export default function App() {
   }
 
   const activeSchool = allSchools.find((school) => school.id === activeSchoolId)
+  const activeSchoolDisplayName = activeSchool
+    ? (activeSchool.schoolCode && schoolShortNames[activeSchool.schoolCode]) ||
+      activeSchool.shortName
+    : ""
   async function shareSchool(school: School) {
     const schoolId =
       school.sourceKey ||
@@ -4319,16 +4408,28 @@ export default function App() {
     const url = new URL(window.location.href)
     url.searchParams.set("schoolid", schoolId)
     try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${(school.schoolCode && schoolShortNames[school.schoolCode]) || school.shortName} 평가계획`,
+          text: "평가계획을 확인해 보세요.",
+          url: url.toString(),
+        })
+        setShareStatus("copied")
+        window.setTimeout(() => setShareStatus("idle"), 1800)
+        return
+      }
       await navigator.clipboard.writeText(url.toString())
       setShareStatus("copied")
       window.setTimeout(() => setShareStatus("idle"), 1800)
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return
       setShareStatus("error")
     }
   }
   const normalizedSchoolSearch = schoolSearch.trim().toLocaleLowerCase("ko")
   const localSchoolResults = normalizedSchoolSearch
     ? allSchools
+        .filter((school) => isAdmin || school.schoolCode !== "0000000")
         .filter(
           (school) =>
             school.name
@@ -4344,6 +4445,7 @@ export default function App() {
     : []
   const publishedSchoolResults = normalizedSchoolSearch
     ? publishedSchools
+        .filter((school) => isAdmin || school.schoolCode !== "0000000")
         .filter(
           (school) =>
             school.schoolName
@@ -4445,7 +4547,10 @@ export default function App() {
                     kind: "local" as const,
                     id: school.id,
                     key: school.id,
-                    name: school.shortName,
+                    name:
+                      (school.schoolCode &&
+                        schoolShortNames[school.schoolCode]) ||
+                      school.shortName,
                     grade: school.grade || 2,
                     semester: school.semester || 2,
                     code: school.sourceKey || school.schoolCode,
@@ -4454,7 +4559,8 @@ export default function App() {
                     kind: "published" as const,
                     id: school.schoolKey,
                     key: school.schoolKey,
-                    name: school.schoolName,
+                    name:
+                      schoolShortNames[school.schoolCode] || school.schoolName,
                     grade: school.grade,
                     semester: school.semester,
                     code: school.schoolKey,
@@ -4491,9 +4597,24 @@ export default function App() {
                 schoolSearchStatus !== "loading" &&
                 localSchoolResults.length === 0 &&
                 publishedSchoolResults.length === 0 && (
-                  <p className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-400 dark:border-slate-700">
-                    검색 결과가 없습니다. 학교명이나 배포 코드를 확인해 주세요.
-                  </p>
+                  <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm dark:border-slate-700">
+                    <p className="text-slate-400">
+                      검색 결과가 없습니다. 학교명이나 배포 코드를 확인해
+                      주세요.
+                    </p>
+                    <button
+                      className="mt-3 font-extrabold text-orange-600 underline decoration-orange-300 underline-offset-4 transition hover:text-red-600 dark:text-orange-300"
+                      onClick={() => void requestSchoolAddition()}
+                      type="button"
+                    >
+                      이 학교를 추가할까요?
+                    </button>
+                    {!user && (
+                      <p className="mt-2 text-xs font-semibold text-slate-400">
+                        로그인 하고 우리 학교를 추가할 수 있어요.
+                      </p>
+                    )}
+                  </div>
                 )}
             </div>
             {schoolSearchError && (
@@ -4508,9 +4629,7 @@ export default function App() {
             </div>
             <button
               className="flex h-12 w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-5 text-sm font-extrabold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
-              onClick={() =>
-                user ? setShowSchoolManager(true) : void handleSignIn()
-              }
+              onClick={() => void requestSchoolAddition()}
               type="button"
             >
               {user ? "내 학교 관리 · 학교 추가" : "Google 로그인 후 학교 추가"}
@@ -4539,14 +4658,14 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       {schoolManager}
       <header className="border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-4 sm:px-8">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
               <Icon name="book" className="size-5" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-[11px] font-bold tracking-[0.16em] text-indigo-600 dark:text-[#aab2cc]">
-                {activeSchool.shortName} · {activeSchool.grade || 2}-
+              <p className="truncate text-[10px] font-bold tracking-[-0.02em] text-indigo-600 dark:text-[#aab2cc] sm:text-[11px] sm:tracking-[0.08em]">
+                {activeSchoolDisplayName} · {activeSchool.grade || 2}-
                 {activeSchool.semester || 2} 평가계획
               </p>
               <p className="text-lg font-extrabold tracking-tight">
@@ -4554,24 +4673,28 @@ export default function App() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
             <div className="mr-1 hidden md:block">{authControl}</div>
             {themeControl}
             <button
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               onClick={() => void shareSchool(activeSchool)}
+              aria-label="평가계획 공유"
               type="button"
             >
-              {shareStatus === "copied"
-                ? "링크 복사됨"
-                : shareStatus === "error"
-                  ? "공유 실패"
-                  : "공유"}
+              <Icon name="share" className="size-4" />
+              <span className="hidden sm:inline">
+                {shareStatus === "copied"
+                  ? "링크 복사됨"
+                  : shareStatus === "error"
+                    ? "공유 실패"
+                    : "공유"}
+              </span>
             </button>
             <button
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               onClick={() =>
-                user ? setShowSchoolManager(true) : void handleSignIn()
+                user ? openSchoolManager("mine") : void handleSignIn()
               }
               type="button"
             >
@@ -4607,8 +4730,8 @@ export default function App() {
             <p className="mb-1 text-sm font-bold text-indigo-600 dark:text-[#aab2cc]">
               내 성적 한눈에 보기
             </p>
-            <h1 className="break-keep text-[25px] font-black tracking-tight">
-              2026 {activeSchool.shortName} {activeSchool.grade || 2}-
+            <h1 className="break-words text-[21px] font-black tracking-[-0.045em] sm:text-[25px] sm:tracking-tight">
+              2026 {activeSchoolDisplayName} {activeSchool.grade || 2}-
               {activeSchool.semester || 2} 성적계산기
             </h1>
           </div>

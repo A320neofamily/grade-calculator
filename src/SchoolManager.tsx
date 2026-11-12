@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { User } from "firebase/auth"
 import {
   deletePublishedSchool,
+  getPublishedSchool,
   getSchoolKey,
   listPublishedSchools,
   publishSchoolConfig,
@@ -15,6 +16,7 @@ import {
 type SchoolInfo = {
   schoolcode: string
   name: string
+  shortname?: string
   cityname?: string
   address?: string
 }
@@ -36,23 +38,25 @@ type SchoolManagerProps = {
   ) => void
   onDelete: (id: string) => void
   onOpen: (id: string) => void
+  onOpenPublished: (schoolKey: string) => void
+  onShare: (id: string) => void
   onRequestSignIn: () => void
+  initialView?: "mine" | "editor"
 }
 
 const COLORS = [
-  "bg-rose-500",
-  "bg-amber-500",
-  "bg-orange-500",
-  "bg-indigo-500",
-  "bg-emerald-500",
-  "bg-teal-500",
-  "bg-blue-500",
-  "bg-red-500",
-  "bg-cyan-500",
-  "bg-violet-500",
-  "bg-fuchsia-500",
-  "bg-sky-500",
-  "bg-slate-400",
+  { value: "bg-red-500", label: "빨강" },
+  { value: "bg-orange-500", label: "주황" },
+  { value: "bg-amber-500", label: "노랑" },
+  { value: "bg-emerald-500", label: "초록" },
+  { value: "bg-teal-500", label: "청록" },
+  { value: "bg-sky-500", label: "하늘" },
+  { value: "bg-blue-500", label: "파랑" },
+  { value: "bg-indigo-500", label: "남색" },
+  { value: "bg-violet-500", label: "보라" },
+  { value: "bg-fuchsia-500", label: "자홍" },
+  { value: "bg-rose-500", label: "장미" },
+  { value: "bg-slate-400", label: "회색" },
 ]
 
 const WRITTEN_EXAMS = [
@@ -71,8 +75,30 @@ function emptySubject(index: number): ConfigSubject {
   return {
     id: `subject-${index + 1}`,
     name: `새 과목 ${index + 1}`,
-    color: COLORS[index % COLORS.length],
+    color: COLORS[index % COLORS.length].value,
     assessments: [],
+  }
+}
+
+function draftStorageKey(uid: string) {
+  return `grade-calculator-school-draft-v1:${uid}`
+}
+
+function readDraft(uid: string): SchoolConfig | null {
+  try {
+    const value = JSON.parse(
+      localStorage.getItem(draftStorageKey(uid)) || "null",
+    ) as unknown
+    if (
+      typeof value !== "object" ||
+      value === null ||
+      !Array.isArray((value as SchoolConfig).subjects)
+    ) {
+      return null
+    }
+    return value as SchoolConfig
+  } catch {
+    return null
   }
 }
 
@@ -191,6 +217,7 @@ function Editor({
   initial,
   sourceKey,
   user,
+  isAdmin,
   onCancel,
   onSaved,
   onRequestSignIn,
@@ -198,14 +225,22 @@ function Editor({
   initial?: SchoolConfig
   sourceKey?: string
   user: User | null
+  isAdmin: boolean
   onCancel: () => void
   onSaved: (config: SchoolConfig, sourceKey?: string) => void
   onRequestSignIn: () => void
 }) {
-  const [config, setConfig] = useState<SchoolConfig>(
+  const savedDraft = !initial && user ? readDraft(user.uid) : null
+  const [config, setConfig] = useState<SchoolConfig>(() =>
     initial
       ? cloneConfig(initial)
-      : { schoolCode: "", schoolName: "", grade: 0, semester: 0, subjects: [] },
+      : savedDraft || {
+          schoolCode: "",
+          schoolName: "",
+          grade: 0,
+          semester: 0,
+          subjects: [],
+        },
   )
   const [schoolQuery, setSchoolQuery] = useState(initial?.schoolName ?? "")
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo[]>([])
@@ -214,7 +249,11 @@ function Editor({
   const [message, setMessage] = useState<{
     tone: "error" | "success" | "info"
     text: string
-  } | null>(null)
+  } | null>(
+    savedDraft
+      ? { tone: "info", text: "이 기기에 저장된 임시 저장본을 불러왔습니다." }
+      : null,
+  )
   const [busy, setBusy] = useState<"publish" | "update" | null>(null)
 
   useEffect(() => {
@@ -230,13 +269,14 @@ function Editor({
             typeof item === "object" &&
             item !== null &&
             typeof item.schoolcode === "string" &&
-            typeof item.name === "string",
+            typeof item.name === "string" &&
+            (isAdmin || item.schoolcode !== "0000000"),
         )
         setSchoolInfo(valid)
         setSchoolInfoStatus("ready")
       })
       .catch(() => setSchoolInfoStatus("error"))
-  }, [initial?.schoolCode])
+  }, [initial?.schoolCode, isAdmin])
 
   const schoolResults = useMemo(() => {
     const query = schoolQuery.trim().toLocaleLowerCase("ko")
@@ -285,6 +325,7 @@ function Editor({
         )
       }
       setConfig(normalizedConfig)
+      if (user) localStorage.removeItem(draftStorageKey(user.uid))
       onSaved(normalizedConfig, getSchoolKey(normalizedConfig))
       setMessage({
         tone: "success",
@@ -384,7 +425,7 @@ function Editor({
                           setConfig((current) => ({
                             ...current,
                             schoolCode: school.schoolcode,
-                            schoolName: school.name,
+                            schoolName: school.shortname || school.name,
                           }))
                           setSchoolQuery(school.name)
                         }}
@@ -567,8 +608,8 @@ function Editor({
                       value={subject.color}
                     >
                       {COLORS.map((color) => (
-                        <option key={color} value={color}>
-                          {color}
+                        <option key={color.value} value={color.value}>
+                          {color.label}
                         </option>
                       ))}
                     </select>
@@ -871,6 +912,24 @@ function Editor({
       )}
 
       <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 dark:border-slate-700 sm:flex-row sm:justify-end">
+        <button
+          className={secondaryButton}
+          disabled={!user || busy !== null}
+          onClick={() => {
+            if (!user) return
+            localStorage.setItem(
+              draftStorageKey(user.uid),
+              JSON.stringify(config),
+            )
+            setMessage({
+              tone: "success",
+              text: "현재 내용을 이 기기에 임시 저장했습니다.",
+            })
+          }}
+          type="button"
+        >
+          임시 저장
+        </button>
         {sourceKey && (
           <button
             className={secondaryButton}
@@ -902,9 +961,16 @@ export default function SchoolManager({
   onSave,
   onDelete,
   onOpen,
+  onOpenPublished,
+  onShare,
   onRequestSignIn,
+  initialView = "mine",
 }: SchoolManagerProps) {
-  const [view, setView] = useState<"mine" | "editor" | "admin">("mine")
+  const [view, setView] = useState<"mine" | "editor" | "admin">(
+    initialView === "editor" && (isAdmin || schools.length === 0)
+      ? "editor"
+      : "mine",
+  )
   const [editing, setEditing] = useState<{
     config?: SchoolConfig
     sourceKey?: string
@@ -915,6 +981,10 @@ export default function SchoolManager({
   const [adminStatus, setAdminStatus] =
     useState<"idle" | "loading" | "ready" | "error">("idle")
   const [busyKey, setBusyKey] = useState<string | null>(null)
+  const [detailKey, setDetailKey] = useState<string | null>(null)
+  const [detailConfig, setDetailConfig] = useState<SchoolConfig | null>(null)
+  const [detailStatus, setDetailStatus] =
+    useState<"idle" | "loading" | "ready" | "error">("idle")
   const [managerError, setManagerError] = useState("")
   const canCreate = Boolean(user) && (isAdmin || schools.length === 0)
 
@@ -998,6 +1068,29 @@ export default function SchoolManager({
     }
   }
 
+  const togglePublishedDetails = async (schoolKey: string) => {
+    if (detailKey === schoolKey) {
+      setDetailKey(null)
+      setDetailConfig(null)
+      setDetailStatus("idle")
+      return
+    }
+    setDetailKey(schoolKey)
+    setDetailConfig(null)
+    setDetailStatus("loading")
+    try {
+      setDetailConfig(await getPublishedSchool(schoolKey))
+      setDetailStatus("ready")
+    } catch (error) {
+      setDetailStatus("error")
+      setManagerError(
+        error instanceof Error
+          ? error.message
+          : "평가계획 내용을 불러오지 못했습니다.",
+      )
+    }
+  }
+
   return (
     <div
       aria-label="내 학교 관리"
@@ -1076,6 +1169,7 @@ export default function SchoolManager({
               }}
               sourceKey={editing?.sourceKey}
               user={user}
+              isAdmin={isAdmin}
             />
           )}
 
@@ -1086,7 +1180,6 @@ export default function SchoolManager({
                   <h2 className="text-2xl font-black">내가 추가한 학교</h2>
                   <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                     일반 계정은 한 개의 학교만 추가할 수 있습니다.
-                    {isAdmin && " 관리자는 학교 추가 수에 제한이 없습니다."}
                   </p>
                 </div>
                 <button
@@ -1140,6 +1233,28 @@ export default function SchoolManager({
                         </button>
                         <button
                           className={secondaryButton}
+                          onClick={() => onShare(school.id)}
+                          type="button"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            className="mr-1 inline size-4"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.8"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle cx="18" cy="5" r="3" />
+                            <circle cx="6" cy="12" r="3" />
+                            <circle cx="18" cy="19" r="3" />
+                            <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4" />
+                          </svg>
+                          공유
+                        </button>
+                        <button
+                          className={secondaryButton}
                           onClick={() =>
                             showEditor(school, school.sourceKey, school.id)
                           }
@@ -1170,9 +1285,6 @@ export default function SchoolManager({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-black">전체 학교 관리</h2>
-                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                    관리자는 배포된 모든 학교 평가계획을 삭제할 수 있습니다.
-                  </p>
                 </div>
                 <button
                   className={secondaryButton}
@@ -1190,29 +1302,104 @@ export default function SchoolManager({
               )}
               {adminStatus === "ready" && (
                 <div className="mt-6 space-y-3">
-                  {published.map((school) => (
-                    <article
-                      className="flex flex-col gap-4 rounded-2xl border border-slate-200 p-5 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between"
-                      key={school.schoolKey}
-                    >
-                      <div>
-                        <h3 className="font-black">{school.schoolName}</h3>
-                        <p className="mt-1 text-sm text-slate-400">
-                          {school.schoolKey}
-                        </p>
-                      </div>
-                      <button
-                        className="rounded-xl px-4 py-2.5 text-sm font-extrabold text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:hover:bg-rose-500/10"
-                        disabled={busyKey === school.schoolKey}
-                        onClick={() =>
-                          void removePublishedSchool(school.schoolKey)
-                        }
-                        type="button"
+                  {published
+                    .filter(
+                      (school) => isAdmin || school.schoolCode !== "0000000",
+                    )
+                    .map((school) => (
+                      <article
+                        className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700"
+                        key={school.schoolKey}
                       >
-                        {busyKey === school.schoolKey ? "삭제 중..." : "삭제"}
-                      </button>
-                    </article>
-                  ))}
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <h3 className="font-black">{school.schoolName}</h3>
+                            <p className="mt-1 text-sm text-slate-400">
+                              {school.grade}학년 {school.semester}학기 ·{" "}
+                              {school.schoolKey}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              className={secondaryButton}
+                              disabled={
+                                detailStatus === "loading" &&
+                                detailKey === school.schoolKey
+                              }
+                              onClick={() =>
+                                void togglePublishedDetails(school.schoolKey)
+                              }
+                              type="button"
+                            >
+                              {detailKey === school.schoolKey
+                                ? detailStatus === "loading"
+                                  ? "불러오는 중..."
+                                  : "내용 닫기"
+                                : "내용 열람"}
+                            </button>
+                            <button
+                              className={primaryButton}
+                              onClick={() => onOpenPublished(school.schoolKey)}
+                              type="button"
+                            >
+                              평가계획 열기
+                            </button>
+                            <button
+                              className="rounded-xl px-4 py-2.5 text-sm font-extrabold text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:hover:bg-rose-500/10"
+                              disabled={busyKey === school.schoolKey}
+                              onClick={() =>
+                                void removePublishedSchool(school.schoolKey)
+                              }
+                              type="button"
+                            >
+                              {busyKey === school.schoolKey
+                                ? "삭제 중..."
+                                : "삭제"}
+                            </button>
+                          </div>
+                        </div>
+                        {detailKey === school.schoolKey &&
+                          detailStatus === "ready" &&
+                          detailConfig && (
+                            <div className="mt-5 border-t border-slate-200 pt-5 dark:border-slate-700">
+                              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {detailConfig.subjects.map((subject) => (
+                                  <div
+                                    className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800/70"
+                                    key={subject.id}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className={`size-2.5 rounded-full ${subject.color}`}
+                                      />
+                                      <h4 className="font-extrabold">
+                                        {subject.name}
+                                      </h4>
+                                    </div>
+                                    <ul className="mt-3 space-y-2 text-xs text-slate-500 dark:text-slate-400">
+                                      {subject.passOnly ? (
+                                        <li>원점수 미산출 과목</li>
+                                      ) : (
+                                        subject.assessments.map(
+                                          (assessment) => (
+                                            <li key={assessment.id}>
+                                              <span className="font-bold text-slate-700 dark:text-slate-200">
+                                                {assessment.title}
+                                              </span>{" "}
+                                              · {assessment.period} ·{" "}
+                                              {assessment.weight}%
+                                            </li>
+                                          ),
+                                        )
+                                      )}
+                                    </ul>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                      </article>
+                    ))}
                 </div>
               )}
             </div>

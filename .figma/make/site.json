@@ -1,5 +1,5 @@
 {
-  "description": "I can’t determine the web app’s purpose from this request; it describes initial project setup and deployment verification, not the app’s user-facing functionality.",
+  "description": "더 이상 성적을 계산할 필요가 없습니다! 이 원점수 계산기는, 자동으로 자신의 원점수를 계산해주고, 최고 등급에 필요한 점수나, 최종 원점수 성적까지도 한눈에 볼 수 있습니다.",
   "robots": {
     "index": false
   },
