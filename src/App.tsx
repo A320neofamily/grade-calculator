@@ -30,7 +30,6 @@ type Subject = {
   color: string
   assessments: Assessment[]
   passOnly?: boolean
-  hideAssessmentDetails?: boolean
 }
 
 type Scores = Record<string, string>
@@ -4138,6 +4137,31 @@ export default function App() {
     if (activeSchoolId === id) setActiveSchoolId(null)
   }
 
+  function handlePublishedDeletion(schoolKey: string) {
+    const matching = allSchools.filter(
+      (school) =>
+        school.sourceKey === schoolKey || school.id === `custom:${schoolKey}`,
+    )
+    const ids = new Set(matching.map((school) => school.id))
+    matching.forEach((school) => localStorage.removeItem(school.storageKey))
+    setCustomSchools((current) =>
+      current.filter((school) => !ids.has(school.id)),
+    )
+    setTransientSchools((current) =>
+      current.filter((school) => !ids.has(school.id)),
+    )
+    setPublishedSchools((current) =>
+      current.filter((school) => school.schoolKey !== schoolKey),
+    )
+    setScoresBySchool((current) =>
+      Object.fromEntries(
+        Object.entries(current).filter(([id]) => !ids.has(id)),
+      ),
+    )
+    if (ids.has(schoolChoice)) setSchoolChoice("")
+    if (activeSchoolId && ids.has(activeSchoolId)) setActiveSchoolId(null)
+  }
+
   function openSchool(id: string) {
     const school = allSchools.find((item) => item.id === id)
     if (!school || school.subjects.length === 0) return
@@ -4335,12 +4359,22 @@ export default function App() {
       )}
     </div>
   )
+  const noticeControl = (
+    <button
+      className="rounded-lg px-3 py-2 text-sm font-bold text-slate-500 transition hover:bg-slate-100 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+      onClick={() => setShowNotice(true)}
+      type="button"
+    >
+      공지사항 열기
+    </button>
+  )
   const schoolManager = showSchoolManager ? (
     <SchoolManager
       initialView={schoolManagerInitialView}
       isAdmin={isAdmin}
       onClose={() => setShowSchoolManager(false)}
       onDelete={deleteCustomSchool}
+      onPublishedDeleted={handlePublishedDeletion}
       onOpen={openSchool}
       onOpenPublished={(schoolKey) => void openPublishedSchool(schoolKey)}
       onRequestSignIn={handleSignIn}
@@ -4722,6 +4756,7 @@ export default function App() {
             </button>
           </form>
           <div className="mt-4">{authControl}</div>
+          <div className="mt-2 text-center">{noticeControl}</div>
           <div className="mt-2 text-center">
             <VisitorStats />
           </div>
@@ -4761,7 +4796,8 @@ export default function App() {
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <div className="flex shrink-0 flex-wrap justify-end items-center gap-0.5 sm:gap-1">
+            {noticeControl}
             <div className="mr-1 hidden md:block">{authControl}</div>
             {themeControl}
             <button
@@ -5117,17 +5153,14 @@ export default function App() {
                               >
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">
-                                    {activeSubject.hideAssessmentDetails
-                                      ? `${type} ${items.indexOf(item) + 1}`
-                                      : item.title}
+                                    {item.title}
                                   </p>
                                   <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-400">
-                                    {!activeSubject.hideAssessmentDetails && (
-                                      <>
-                                        <span>{item.period}</span>
-                                        <span className="size-1 rounded-full bg-slate-300" />
-                                      </>
-                                    )}
+                                    <span>
+                                      {item.period ||
+                                        `${activeSchool.semester}학기`}
+                                    </span>
+                                    <span className="size-1 rounded-full bg-slate-300" />
                                     <span className="font-semibold text-indigo-600 dark:text-[#aab2cc]">
                                       {item.weight}% 반영
                                     </span>
@@ -5146,10 +5179,7 @@ export default function App() {
                                 </div>
                                 <label className="relative block">
                                   <span className="sr-only">
-                                    {activeSubject.hideAssessmentDetails
-                                      ? `${type} ${items.indexOf(item) + 1}`
-                                      : item.title}{" "}
-                                    점수
+                                    {item.title} 점수
                                   </span>
                                   <input
                                     className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 pr-12 text-right text-base font-extrabold tabular-nums outline-none transition placeholder:font-medium placeholder:text-slate-300 hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-600 dark:hover:border-slate-600 dark:focus:border-indigo-400 dark:focus:bg-slate-800 dark:focus:ring-indigo-900/50"

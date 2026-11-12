@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { parseSubjectPlans } from "./schoolImport"
 import type { User } from "firebase/auth"
 import {
   deletePublishedSchool,
@@ -37,6 +38,7 @@ type SchoolManagerProps = {
     previousId?: string,
   ) => void
   onDelete: (id: string) => void
+  onPublishedDeleted: (schoolKey: string) => void
   onOpen: (id: string) => void
   onOpenPublished: (schoolKey: string) => void
   onShare: (id: string) => void
@@ -125,6 +127,7 @@ function normalizeConfigIds(config: SchoolConfig): SchoolConfig {
         id: `subject-${subjectIndex + 1}`,
         assessments: subject.assessments.map((assessment) => ({
           ...assessment,
+          period: assessment.period.trim() || `${config.semester}학기`,
           id:
             assessment.type === "지필평가"
               ? assessment.title === "중간고사"
@@ -175,12 +178,8 @@ function validateConfig(config: SchoolConfig) {
       return `${subject.name}: 수행평가는 최대 5개까지 추가할 수 있습니다.`
     const assessmentIds = new Set<string>()
     for (const assessment of subject.assessments) {
-      if (
-        !assessment.id.trim() ||
-        !assessment.title.trim() ||
-        !assessment.period.trim()
-      ) {
-        return `${subject.name}: 모든 평가의 ID, 이름, 시기를 입력해 주세요.`
+      if (!assessment.id.trim() || !assessment.title.trim()) {
+        return `${subject.name}: 모든 평가의 ID와 이름을 입력해 주세요.`
       }
       if (
         assessment.type === "지필평가" &&
@@ -262,6 +261,11 @@ function Editor({
       : null,
   )
   const [busy, setBusy] = useState<"publish" | "update" | null>(null)
+  const [importPlans, setImportPlans] = useState<ConfigSubject[][]>([])
+  const [importIndex, setImportIndex] = useState(0)
+  const [importName, setImportName] = useState("")
+  const [importBusy, setImportBusy] = useState(false)
+  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     if (initial?.schoolCode) return
@@ -495,12 +499,122 @@ function Editor({
         </div>
       </section>
 
+      {isAdmin && (
+        <section className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 dark:border-indigo-500/30 dark:bg-indigo-500/5 sm:p-5">
+          <h3 className="font-extrabold">JSON으로 평가계획 가져오기</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+            첨부 양식의 과목 배열을 지원합니다. 따옴표 없는 키, 마지막 쉼표,
+            여러 배열도 읽을 수 있습니다. 학교·학년·학기는 위에서 선택해 주세요.
+            가져온 뒤 확인하고 배포해야 서버에 저장됩니다.
+          </p>
+          <input
+            aria-label="평가계획 JSON 파일"
+            accept=".json,.json5,application/json"
+            className="mt-4 block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-indigo-600 file:px-4 file:py-2.5 file:font-bold file:text-white"
+            disabled={busy !== null || importBusy}
+            type="file"
+            onChange={async (event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ""
+              if (!file) return
+              setImportBusy(true)
+              setImportPlans([])
+              setImportName("")
+              try {
+                if (file.size > 1024 * 1024)
+                  throw new Error("파일은 최대 1MB까지 불러올 수 있습니다.")
+                const plans = parseSubjectPlans(await file.text())
+                setImportPlans(plans)
+                setImportIndex(0)
+                setImportName(file.name)
+                setMessage({
+                  tone: "info",
+                  text: `${plans.length}개의 평가계획을 찾았습니다. 적용할 평가계획을 선택해 주세요.`,
+                })
+              } catch (error) {
+                setMessage({
+                  tone: "error",
+                  text:
+                    error instanceof Error
+                      ? error.message
+                      : "파일을 읽지 못했습니다.",
+                })
+              } finally {
+                setImportBusy(false)
+              }
+            }}
+          />
+          {importBusy && (
+            <p className="mt-3 text-sm" role="status">
+              파일을 읽는 중...
+            </p>
+          )}
+          {importPlans.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <label className="block text-sm font-bold">
+                {importName} · 적용할 평가계획
+                <select
+                  className={`${inputClass} mt-2`}
+                  value={importIndex}
+                  onChange={(event) =>
+                    setImportIndex(Number(event.target.value))
+                  }
+                >
+                  {importPlans.map((subjects, index) => (
+                    <option key={index} value={index}>
+                      평가계획 {index + 1} · {subjects.length}과목 ·{" "}
+                      {subjects
+                        .slice(0, 4)
+                        .map((subject) => subject.name)
+                        .join(", ")}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
+                {importPlans[importIndex]
+                  .map((subject) => subject.name)
+                  .join(" · ")}
+              </p>
+              <button
+                className={secondaryButton}
+                disabled={busy !== null}
+                type="button"
+                onClick={() => {
+                  if (
+                    config.subjects.length > 0 &&
+                    !window.confirm(
+                      "현재 편집 중인 과목을 선택한 평가계획으로 교체할까요?",
+                    )
+                  )
+                    return
+                  setConfig((current) => ({
+                    ...current,
+                    subjects: importPlans[importIndex],
+                  }))
+                  setCollapsed({})
+                  setMessage({
+                    tone: "success",
+                    text: `평가계획 ${importIndex + 1}의 ${importPlans[importIndex].length}과목을 편집기에 적용했습니다. 학교·학년·학기를 확인한 후 배포해 주세요.`,
+                  })
+                }}
+              >
+                선택한 평가계획 적용
+                {config.subjects.length > 0 ? " (현재 과목 교체)" : ""}
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+
       <section>
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="font-extrabold">2. 과목과 평가 계획</h3>
             <p className="mt-1 text-xs text-slate-400">
-              화살표로 과목과 평가 순서를 바꿀 수 있습니다.
+              화살표로 순서를 바꾸고 과목별 지필·수행 평가를 접거나 펼칠 수
+              있습니다. 평가 시기는 선택 사항이며 비우면 선택한 학기로
+              저장됩니다.
             </p>
           </div>
           <button
@@ -652,26 +766,6 @@ function Editor({
 
                 {!subject.passOnly && (
                   <div className="mt-4">
-                    <label className="mb-4 flex items-start gap-3 rounded-xl bg-white p-3 text-sm font-bold dark:bg-slate-900">
-                      <input
-                        checked={subject.hideAssessmentDetails === true}
-                        className="mt-0.5 size-4 accent-indigo-600"
-                        onChange={(event) =>
-                          updateSubject(subjectIndex, (current) => ({
-                            ...current,
-                            hideAssessmentDetails:
-                              event.target.checked || undefined,
-                          }))
-                        }
-                        type="checkbox"
-                      />
-                      <span>
-                        지필·수행 내용 숨김
-                        <span className="mt-1 block font-normal text-slate-400">
-                          계산기에서 평가명과 평가 시기를 표시하지 않습니다.
-                        </span>
-                      </span>
-                    </label>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p
                         className={`text-sm font-extrabold ${
@@ -680,7 +774,23 @@ function Editor({
                       >
                         반영 비율 합계 {total}%
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          aria-expanded={!collapsed[subjectIndex]}
+                          aria-controls={`assessments-${subjectIndex}`}
+                          className={secondaryButton}
+                          type="button"
+                          onClick={() =>
+                            setCollapsed((current) => ({
+                              ...current,
+                              [subjectIndex]: !current[subjectIndex],
+                            }))
+                          }
+                        >
+                          지필·수행{" "}
+                          {collapsed[subjectIndex] ? "펼치기" : "접기"} (
+                          {subject.assessments.length})
+                        </button>
                         {(["지필평가", "수행평가"] as const).map((type) => (
                           <button
                             className={secondaryButton}
@@ -691,7 +801,11 @@ function Editor({
                               ).length >= 5
                             }
                             key={type}
-                            onClick={() =>
+                            onClick={() => {
+                              setCollapsed((current) => ({
+                                ...current,
+                                [subjectIndex]: false,
+                              }))
                               updateSubject(subjectIndex, (current) => ({
                                 ...current,
                                 assessments: [
@@ -702,7 +816,7 @@ function Editor({
                                   ),
                                 ],
                               }))
-                            }
+                            }}
                             type="button"
                           >
                             {type} 추가
@@ -713,7 +827,11 @@ function Editor({
                         ))}
                       </div>
                     </div>
-                    <div className="mt-3 space-y-3">
+                    <div
+                      className="mt-3 space-y-3"
+                      id={`assessments-${subjectIndex}`}
+                      hidden={collapsed[subjectIndex]}
+                    >
                       {subject.assessments.map(
                         (assessment, assessmentIndex) => (
                           <div
@@ -811,7 +929,7 @@ function Editor({
                                 />
                               )}
                               <input
-                                aria-label="평가 시기"
+                                aria-label="평가 시기 (선택)"
                                 className={inputClass}
                                 onChange={(event) =>
                                   updateSubject(subjectIndex, (current) => ({
@@ -827,7 +945,7 @@ function Editor({
                                     ),
                                   }))
                                 }
-                                placeholder="예: 10월"
+                                placeholder={`선택 · 비우면 ${config.semester || "선택한 "}학기`}
                                 value={assessment.period}
                               />
                               <input
@@ -1002,6 +1120,7 @@ export default function SchoolManager({
   onClose,
   onSave,
   onDelete,
+  onPublishedDeleted,
   onOpen,
   onOpenPublished,
   onShare,
@@ -1028,7 +1147,22 @@ export default function SchoolManager({
   const [detailStatus, setDetailStatus] =
     useState<"idle" | "loading" | "ready" | "error">("idle")
   const [managerError, setManagerError] = useState("")
+  const [pendingDelete, setPendingDelete] = useState<{
+    label: string
+    schoolKey?: string
+    localId?: string
+    localOnly?: boolean
+  } | null>(null)
+  const deleteLock = useRef(false)
+  const deleteCancelRef = useRef<HTMLButtonElement>(null)
   const canCreate = Boolean(user) && (isAdmin || schools.length === 0)
+
+  useEffect(() => {
+    if (!pendingDelete) return
+    const previousFocus = document.activeElement as HTMLElement | null
+    deleteCancelRef.current?.focus()
+    return () => previousFocus?.focus()
+  }, [pendingDelete])
 
   const loadPublished = async () => {
     setAdminStatus("loading")
@@ -1066,46 +1200,35 @@ export default function SchoolManager({
     setView("editor")
   }
 
-  const removeSchool = async (school: ManagedSchool) => {
-    if (
-      !window.confirm(
-        `'${school.schoolName} ${school.grade}학년 ${school.semester}학기' 평가계획을 삭제할까요?`,
-      )
-    )
-      return
-    setBusyKey(school.sourceKey || school.id)
+  const confirmDeletion = async () => {
+    if (!pendingDelete || deleteLock.current) return
+    deleteLock.current = true
+    setBusyKey(pendingDelete.schoolKey || pendingDelete.localId || "delete")
     setManagerError("")
     try {
-      if (school.sourceKey) await deletePublishedSchool(school.sourceKey)
-      onDelete(school.id)
+      if (pendingDelete.schoolKey && !pendingDelete.localOnly) {
+        await deletePublishedSchool(pendingDelete.schoolKey)
+        setPublished((current) =>
+          current.filter(
+            (school) => school.schoolKey !== pendingDelete.schoolKey,
+          ),
+        )
+        if (detailKey === pendingDelete.schoolKey) {
+          setDetailKey(null)
+          setDetailConfig(null)
+          setDetailStatus("idle")
+        }
+        onPublishedDeleted(pendingDelete.schoolKey)
+      } else if (pendingDelete.localId) {
+        onDelete(pendingDelete.localId)
+      }
+      setPendingDelete(null)
     } catch (error) {
       setManagerError(
         error instanceof Error ? error.message : "학교를 삭제하지 못했습니다.",
       )
     } finally {
-      setBusyKey(null)
-    }
-  }
-
-  const removePublishedSchool = async (schoolKey: string) => {
-    if (!window.confirm(`'${schoolKey}' 평가계획을 서버에서 삭제할까요?`))
-      return
-    setBusyKey(schoolKey)
-    setManagerError("")
-    try {
-      await deletePublishedSchool(schoolKey)
-      setPublished((current) =>
-        current.filter((school) => school.schoolKey !== schoolKey),
-      )
-      const localSchool = schools.find(
-        (school) => school.sourceKey === schoolKey,
-      )
-      if (localSchool) onDelete(localSchool.id)
-    } catch (error) {
-      setManagerError(
-        error instanceof Error ? error.message : "학교를 삭제하지 못했습니다.",
-      )
-    } finally {
+      deleteLock.current = false
       setBusyKey(null)
     }
   }
@@ -1184,7 +1307,86 @@ export default function SchoolManager({
         </header>
 
         <main className="p-5 sm:p-8">
-          {managerError && (
+          {pendingDelete && (
+            <section
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="delete-school-title"
+              aria-describedby="delete-school-description"
+              className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-slate-950/70 p-5 backdrop-blur-sm"
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && !deleteLock.current) {
+                  setPendingDelete(null)
+                  setManagerError("")
+                }
+                if (event.key === "Tab") {
+                  const buttons = [
+                    ...event.currentTarget.querySelectorAll<HTMLButtonElement>(
+                      "button:not(:disabled)",
+                    ),
+                  ]
+                  const first = buttons[0]
+                  const last = buttons[buttons.length - 1]
+                  if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault()
+                    last?.focus()
+                  }
+                  if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault()
+                    first?.focus()
+                  }
+                }
+              }}
+            >
+              <div className="w-full max-w-lg rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl dark:border-rose-500/30 dark:bg-slate-900">
+                <h2 id="delete-school-title" className="font-black">
+                  {pendingDelete.localOnly
+                    ? "내 목록에서 제거할까요?"
+                    : "학교 평가계획을 삭제할까요?"}
+                </h2>
+                <p className="mt-2 text-sm font-bold">{pendingDelete.label}</p>
+                <p
+                  id="delete-school-description"
+                  className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400"
+                >
+                  {pendingDelete.schoolKey && !pendingDelete.localOnly
+                    ? "서버에서 삭제하면 다른 사용자도 이 평가계획을 열 수 없습니다. 삭제 성공 후 내 목록과 검색 결과에서도 제거됩니다."
+                    : "이 기기의 내 학교 목록에서만 제거합니다. 서버에 배포된 평가계획은 삭제하지 않습니다."}
+                </p>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-extrabold text-white disabled:opacity-40"
+                    disabled={busyKey !== null}
+                    onClick={() => void confirmDeletion()}
+                    type="button"
+                  >
+                    {busyKey ? "처리 중..." : "확인 · 제거"}
+                  </button>
+                  <button
+                    ref={deleteCancelRef}
+                    className={secondaryButton}
+                    disabled={busyKey !== null}
+                    onClick={() => {
+                      setPendingDelete(null)
+                      setManagerError("")
+                    }}
+                    type="button"
+                  >
+                    취소
+                  </button>
+                </div>
+                {managerError && (
+                  <p
+                    role="alert"
+                    className="mt-4 text-sm font-bold leading-6 text-rose-600 dark:text-rose-300"
+                  >
+                    {managerError}
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+          {managerError && !pendingDelete && (
             <div className="mb-5 rounded-xl bg-rose-50 p-4 font-bold text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">
               {managerError}
             </div>
@@ -1298,14 +1500,36 @@ export default function SchoolManager({
                         </button>
                         <button
                           className="rounded-xl px-4 py-2.5 text-sm font-extrabold text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:hover:bg-rose-500/10"
-                          disabled={busyKey === (school.sourceKey || school.id)}
-                          onClick={() => void removeSchool(school)}
+                          disabled={busyKey !== null}
+                          onClick={() =>
+                            setPendingDelete({
+                              label: `${school.schoolName} ${school.grade}학년 ${school.semester}학기`,
+                              schoolKey: school.sourceKey,
+                              localId: school.id,
+                            })
+                          }
                           type="button"
                         >
                           {busyKey === (school.sourceKey || school.id)
                             ? "삭제 중..."
                             : "삭제"}
                         </button>
+                        {school.sourceKey && (
+                          <button
+                            className={secondaryButton}
+                            disabled={busyKey !== null}
+                            onClick={() =>
+                              setPendingDelete({
+                                label: school.schoolName,
+                                localId: school.id,
+                                localOnly: true,
+                              })
+                            }
+                            type="button"
+                          >
+                            내 목록에서만 제거
+                          </button>
+                        )}
                       </div>
                     </article>
                   ))}
@@ -1380,9 +1604,12 @@ export default function SchoolManager({
                             </button>
                             <button
                               className="rounded-xl px-4 py-2.5 text-sm font-extrabold text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:hover:bg-rose-500/10"
-                              disabled={busyKey === school.schoolKey}
+                              disabled={busyKey !== null}
                               onClick={() =>
-                                void removePublishedSchool(school.schoolKey)
+                                setPendingDelete({
+                                  label: `${school.schoolName} ${school.grade}학년 ${school.semester}학기`,
+                                  schoolKey: school.schoolKey,
+                                })
                               }
                               type="button"
                             >

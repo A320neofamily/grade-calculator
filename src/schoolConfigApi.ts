@@ -17,7 +17,6 @@ export type ConfigSubject = {
   color: string
   assessments: ConfigAssessment[]
   passOnly?: boolean
-  hideAssessmentDetails?: boolean
 }
 
 export type SchoolConfig = {
@@ -110,7 +109,6 @@ export function parseSchoolConfig(value: unknown): SchoolConfig | null {
     const name = readString(item, "name")
     const color = readString(item, "color")
     const passOnly = item.passOnly === true
-    const hideAssessmentDetails = item.hideAssessmentDetails === true
     if (
       !id ||
       !name ||
@@ -128,14 +126,14 @@ export function parseSchoolConfig(value: unknown): SchoolConfig | null {
       const assessmentId = readString(assessment, "id")
       const type = assessment.type
       const title = readString(assessment, "title")
-      const period = readString(assessment, "period")
+      const period =
+        readString(assessment, "period").trim() || `${semester}학기`
       const weight = readNumber(assessment, "weight")
       if (
         !assessmentId ||
         (type !== "지필평가" && type !== "수행평가") ||
         assessmentIds.has(assessmentId) ||
         !title ||
-        !period ||
         !Number.isFinite(weight) ||
         weight < 0 ||
         weight > 100
@@ -167,7 +165,6 @@ export function parseSchoolConfig(value: unknown): SchoolConfig | null {
       color,
       assessments,
       ...(passOnly ? { passOnly: true } : {}),
-      ...(hideAssessmentDetails ? { hideAssessmentDetails: true } : {}),
     })
   }
 
@@ -279,26 +276,53 @@ export async function deletePublishedSchool(schoolKey: string) {
       "학교 설정을 삭제하려면 Google 로그인이 필요합니다.",
     )
   const token = await user.getIdToken(true)
-  const response = await fetch(
-    `${SCHOOL_CONFIG_API_URL}/api/schools/${encodeURIComponent(schoolKey)}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 15000)
+  try {
+    const response = await fetch(
+      `${SCHOOL_CONFIG_API_URL}/api/schools/${encodeURIComponent(schoolKey)}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
       },
-    },
-  )
-  const body = await parseResponse(response)
-  if (!response.ok) {
-    const serverMessage =
-      isRecord(body) && typeof body.message === "string" ? body.message : ""
-    throw new SchoolConfigApiError(
-      response.status,
-      responseMessage(
-        response.status,
-        serverMessage || "학교 설정을 삭제하지 못했습니다.",
-      ),
     )
+    const body = await parseResponse(response)
+    if (!response.ok) {
+      const messages: Record<number, string> = {
+        403: "삭제 권한이 없습니다. 백엔드의 작성자 UID·관리자 권한 설정을 확인해 주세요.",
+        404: "학교 또는 삭제 API를 찾을 수 없습니다. 목록을 새로고침하고 백엔드 DELETE 경로를 확인해 주세요.",
+        405: "서버에서 DELETE를 허용하지 않습니다. 삭제 라우트와 CORS 설정을 확인해 주세요.",
+        501: "서버에 학교 삭제 기능이 구현되어 있지 않습니다.",
+      }
+      throw new SchoolConfigApiError(
+        response.status,
+        `[HTTP ${response.status}] ${messages[response.status] || responseMessage(response.status, "학교 설정을 삭제하지 못했습니다.")}`,
+      )
+    }
+    if (
+      response.status !== 204 &&
+      (response.status !== 200 ||
+        !isRecord(body) ||
+        body.success === false ||
+        body.deleted === false ||
+        !(body.deleted === true || body.success === true || body.ok === true))
+    ) {
+      throw new SchoolConfigApiError(
+        502,
+        "서버에서 삭제 완료를 확인하지 못했습니다. 목록을 새로고침하고 백엔드 응답 형식을 확인해 주세요.",
+      )
+    }
+  } catch (error) {
+    if (error instanceof SchoolConfigApiError) throw error
+    throw new SchoolConfigApiError(
+      0,
+      controller.signal.aborted
+        ? "삭제 응답 시간이 초과되었습니다. 실제 삭제 여부는 목록을 새로고침해 확인해 주세요."
+        : "삭제 서버에 연결하지 못했습니다. 네트워크와 백엔드 CORS의 DELETE·Authorization 허용 여부를 확인해 주세요.",
+    )
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
