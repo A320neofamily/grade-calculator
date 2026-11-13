@@ -290,9 +290,15 @@ function Editor({
 
   const schoolResults = useMemo(() => {
     const query = schoolQuery.trim().toLocaleLowerCase("ko")
-    if (query.length < 2 || config.schoolCode) return []
+    const isCodeQuery = /^\d+$/.test(query)
+    const canSearch = isCodeQuery ? query.length >= 7 : query.length >= 2
+    if (!canSearch || config.schoolCode) return []
     return schoolInfo
-      .filter((school) => school.name.toLocaleLowerCase("ko").includes(query))
+      .filter((school) =>
+        isCodeQuery
+          ? school.schoolcode.includes(query)
+          : school.name.toLocaleLowerCase("ko").includes(query),
+      )
       .slice(0, 20)
   }, [config.schoolCode, schoolInfo, schoolQuery])
 
@@ -412,9 +418,15 @@ function Editor({
                 <input
                   className={inputClass}
                   onChange={(event) => setSchoolQuery(event.target.value)}
-                  placeholder="학교명 2글자 이상 입력"
+                  placeholder="학교명 2글자 이상 또는 학교 코드 7자리 이상"
                   value={schoolQuery}
                 />
+                {/^\d+$/.test(schoolQuery.trim()) &&
+                  schoolQuery.trim().length < 7 && (
+                    <p className="mt-2 text-xs text-slate-400">
+                      학교 코드는 7자리 이상 입력해 주세요.
+                    </p>
+                  )}
                 {schoolInfoStatus === "loading" && (
                   <p className="mt-2 text-xs text-slate-400">
                     학교 목록을 불러오는 중...

@@ -4549,7 +4549,11 @@ export default function App() {
     }
   }
   const normalizedSchoolSearch = schoolSearch.trim().toLocaleLowerCase("ko")
-  const localSchoolResults = normalizedSchoolSearch
+  const isNumericSchoolSearch = /^\d+$/.test(normalizedSchoolSearch)
+  const canSearchSchools =
+    normalizedSchoolSearch.length > 0 &&
+    (!isNumericSchoolSearch || normalizedSchoolSearch.length >= 7)
+  const localSchoolResults = canSearchSchools
     ? allSchools
         .filter((school) => isAdmin || school.schoolCode !== "0000000")
         .filter(
@@ -4565,7 +4569,7 @@ export default function App() {
         )
         .slice(0, 8)
     : []
-  const publishedSchoolResults = normalizedSchoolSearch
+  const publishedSchoolResults = canSearchSchools
     ? publishedSchools
         .filter((school) => isAdmin || school.schoolCode !== "0000000")
         .filter(
@@ -4657,6 +4661,11 @@ export default function App() {
                   value={schoolSearch}
                 />
               </div>
+              {isNumericSchoolSearch && !canSearchSchools && (
+                <span className="mt-2 block text-xs font-semibold text-slate-400">
+                  학교 코드는 7자리 이상 입력해 주세요.
+                </span>
+              )}
             </label>
 
             <div className="mt-4 max-h-80 space-y-2 overflow-y-auto">
@@ -4665,7 +4674,7 @@ export default function App() {
                   배포된 평가계획을 불러오는 중...
                 </p>
               )}
-              {schoolSearch &&
+              {canSearchSchools &&
                 [
                   ...localSchoolResults.map((school) => ({
                     kind: "local" as const,
@@ -4713,7 +4722,7 @@ export default function App() {
                     </span>
                   </button>
                 ))}
-              {schoolSearch &&
+              {canSearchSchools &&
                 schoolSearchStatus !== "loading" &&
                 localSchoolResults.length === 0 &&
                 publishedSchoolResults.length === 0 && (
