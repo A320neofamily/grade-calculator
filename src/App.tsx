@@ -3866,7 +3866,11 @@ export default function App() {
     useState<"mine" | "editor">("mine")
   const [openManagerAfterSignIn, setOpenManagerAfterSignIn] = useState(false)
   const [showPrivacyConsent, setShowPrivacyConsent] = useState(false)
-  const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [privacyConsents, setPrivacyConsents] = useState({
+    policy: false,
+    googleAccount: false,
+    cloudSync: false,
+  })
   const [showNotice, setShowNotice] = useState(
     () =>
       localStorage.getItem(`grade-calculator-notice-hidden:${appVersion}`) !==
@@ -4036,18 +4040,26 @@ export default function App() {
   }, [activeSchoolId, allSchools, isAdmin])
 
   async function handleSignIn() {
-    setPrivacyAccepted(false)
+    setPrivacyConsents({
+      policy: false,
+      googleAccount: false,
+      cloudSync: false,
+    })
     setShowPrivacyConsent(true)
   }
 
   function cancelSignIn() {
     setShowPrivacyConsent(false)
-    setPrivacyAccepted(false)
+    setPrivacyConsents({
+      policy: false,
+      googleAccount: false,
+      cloudSync: false,
+    })
     setOpenManagerAfterSignIn(false)
   }
 
   async function completeSignIn() {
-    if (!privacyAccepted) return
+    if (!Object.values(privacyConsents).every(Boolean)) return
     setShowPrivacyConsent(false)
     setSyncStatus("loading")
     try {
@@ -4268,16 +4280,46 @@ export default function App() {
     <MarkdownDialog
       actions={
         <div className="space-y-3">
-          <label className="flex items-start gap-3 text-sm font-bold text-slate-700 dark:text-slate-200">
-            <input
-              checked={privacyAccepted}
-              className="mt-0.5 size-4 accent-indigo-600"
-              onChange={(event) => setPrivacyAccepted(event.target.checked)}
-              type="checkbox"
-            />
-            개인정보처리방침을 확인했으며 Google 로그인과 입력 데이터 클라우드
-            동기화에 동의합니다.
-          </label>
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
+              아래 필수 항목에 모두 동의해 주세요.
+            </legend>
+            {[
+              {
+                key: "policy" as const,
+                label: "개인정보처리방침을 확인했으며 이에 동의합니다.",
+              },
+              {
+                key: "googleAccount" as const,
+                label:
+                  "Google 로그인 시 계정 식별자, 표시 이름 및 이메일 주소 처리에 동의합니다.",
+              },
+              {
+                key: "cloudSync" as const,
+                label:
+                  "입력한 점수를 계정별로 저장하고 클라우드에서 동기화하는 것에 동의합니다.",
+              },
+            ].map((consent) => (
+              <label
+                className="flex items-start gap-3 text-sm font-bold leading-5 text-slate-700 dark:text-slate-200"
+                key={consent.key}
+              >
+                <input
+                  checked={privacyConsents[consent.key]}
+                  className="mt-0.5 size-4 shrink-0 accent-indigo-600"
+                  onChange={(event) =>
+                    setPrivacyConsents((current) => ({
+                      ...current,
+                      [consent.key]: event.target.checked,
+                    }))
+                  }
+                  required
+                  type="checkbox"
+                />
+                {consent.label}
+              </label>
+            ))}
+          </fieldset>
           <div className="flex gap-2 sm:justify-end">
             <button
               className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
@@ -4288,7 +4330,7 @@ export default function App() {
             </button>
             <button
               className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
-              disabled={!privacyAccepted}
+              disabled={!Object.values(privacyConsents).every(Boolean)}
               onClick={() => void completeSignIn()}
               type="button"
             >
