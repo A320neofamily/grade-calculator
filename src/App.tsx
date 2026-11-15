@@ -7,6 +7,11 @@ import VisitorStats from "./VisitorStats"
 import SchoolManager from "./SchoolManager"
 import MarkdownDialog from "./MarkdownDialog"
 import {
+  oneTapShareUrl,
+  schoolShortName,
+  type SchoolDisplayInfo,
+} from "./schoolPresentation"
+import {
   getPublishedSchool,
   getSchoolKey,
   listPublishedSchools,
@@ -3835,6 +3840,9 @@ export default function App() {
   })
   const [customSchools, setCustomSchools] = useState<CustomSchool[]>([])
   const [transientSchools, setTransientSchools] = useState<CustomSchool[]>([])
+  const [schoolDirectory, setSchoolDirectory] = useState<SchoolDisplayInfo[]>(
+    [],
+  )
   const allSchools = useMemo<School[]>(
     () => [...customSchools, ...transientSchools],
     [customSchools, transientSchools],
@@ -3897,6 +3905,35 @@ export default function App() {
     root.classList.toggle("dark", theme === "dark")
     root.style.colorScheme = `${theme} only`
   }, [theme])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch(`${import.meta.env.BASE_URL}schoolinfo.json`, {
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("학교 정보를 불러오지 못했습니다.")
+        return response.json()
+      })
+      .then((items: unknown) => {
+        if (!Array.isArray(items)) return
+        setSchoolDirectory(
+          items.filter(
+            (item): item is SchoolDisplayInfo =>
+              item !== null &&
+              typeof item === "object" &&
+              typeof item.schoolcode === "string" &&
+              typeof item.name === "string" &&
+              (item.shortname === undefined ||
+                typeof item.shortname === "string"),
+          ),
+        )
+      })
+      .catch(() => {
+        // Keep the abbreviated name fallback available offline.
+      })
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -4558,7 +4595,13 @@ export default function App() {
   }
 
   const activeSchool = allSchools.find((school) => school.id === activeSchoolId)
-  const activeSchoolDisplayName = activeSchool ? activeSchool.shortName : ""
+  const activeSchoolDisplayName = activeSchool
+    ? schoolShortName(
+        activeSchool.shortName,
+        activeSchool.schoolCode,
+        schoolDirectory,
+      )
+    : ""
   async function shareSchool(school: School) {
     const schoolId =
       school.sourceKey ||
@@ -4569,20 +4612,23 @@ export default function App() {
       setShareStatus("error")
       return
     }
-    const url = new URL(window.location.href)
-    url.searchParams.set("schoolid", schoolId)
+    const url = oneTapShareUrl(
+      window.location.href,
+      import.meta.env.BASE_URL,
+      schoolId,
+    )
     try {
       if (navigator.share) {
         await navigator.share({
           title: `${school.shortName} 평가계획`,
           text: "평가계획을 확인해 보세요.",
-          url: url.toString(),
+          url,
         })
         setShareStatus("copied")
         window.setTimeout(() => setShareStatus("idle"), 1800)
         return
       }
-      await navigator.clipboard.writeText(url.toString())
+      await navigator.clipboard.writeText(url)
       setShareStatus("copied")
       window.setTimeout(() => setShareStatus("idle"), 1800)
     } catch (error) {
@@ -4834,25 +4880,28 @@ export default function App() {
       <header className="border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-4 sm:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
+            <div className="hidden size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200 sm:flex">
               <Icon name="book" className="size-5" />
             </div>
-            <div className="min-w-0">
-              <p className="truncate text-[10px] font-bold tracking-[-0.02em] text-indigo-600 dark:text-[#aab2cc] sm:text-[11px] sm:tracking-[0.08em]">
-                {activeSchoolDisplayName} · {activeSchool.grade || 2}-
-                {activeSchool.semester || 2} 평가계획
+            <div className="min-w-0 flex-1">
+              <p
+                className="plan-label text-[10px] font-bold text-indigo-600 dark:text-[#aab2cc] sm:text-[11px]"
+                title={`${activeSchoolDisplayName} · ${activeSchool.grade || 2}-${activeSchool.semester || 2} 평가계획`}
+              >
+                <span>
+                  {activeSchoolDisplayName} · {activeSchool.grade || 2}-
+                  {activeSchool.semester || 2} 평가계획
+                </span>
               </p>
               <p className="text-lg font-extrabold tracking-tight">
                 원점수 계산기
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 flex-wrap justify-end items-center gap-0.5 sm:gap-1">
-            {noticeControl}
-            <div className="mr-1 hidden md:block">{authControl}</div>
+          <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-1">
             {themeControl}
             <button
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              className="flex min-h-10 min-w-9 items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white sm:px-3"
               onClick={() => void shareSchool(activeSchool)}
               aria-label="평가계획 공유"
               type="button"
@@ -4867,19 +4916,8 @@ export default function App() {
               </span>
             </button>
             <button
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-              onClick={() =>
-                user ? openSchoolManager("mine") : void handleSignIn()
-              }
-              type="button"
-            >
-              <span className="hidden sm:inline">
-                {user ? "내 학교 관리" : "로그인 후 학교 추가"}
-              </span>
-              <span className="sm:hidden">{user ? "관리" : "학교 추가"}</span>
-            </button>
-            <button
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              aria-label="학교 변경"
+              className="flex min-h-10 min-w-9 items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white sm:px-3"
               onClick={() => setActiveSchoolId(null)}
               type="button"
             >
@@ -4887,7 +4925,8 @@ export default function App() {
               <span className="hidden sm:inline">학교 변경</span>
             </button>
             <button
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              aria-label="전체 초기화"
+              className="flex min-h-10 min-w-9 items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white sm:px-3"
               disabled={!Object.values(scores).some((value) => value !== "")}
               onClick={clearScores}
               type="button"
@@ -4987,7 +5026,7 @@ export default function App() {
           </div>
         </section>
 
-        <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <div className="grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
           <aside className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
             <div className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
               <h2 className="font-extrabold">과목 선택</h2>
@@ -5203,10 +5242,10 @@ export default function App() {
                                 key={item.id}
                               >
                                 <div className="min-w-0">
-                                  <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">
+                                  <p className="break-words text-sm font-bold text-slate-800 dark:text-slate-100">
                                     {item.title}
                                   </p>
-                                  <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-400">
+                                  <div className="mt-1.5 flex flex-wrap items-center gap-2 break-words text-xs text-slate-400">
                                     <span>
                                       {item.period ||
                                         `${activeSchool.semester}학기`}

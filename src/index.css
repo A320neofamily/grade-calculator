@@ -50,3 +50,20 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   appearance: textfield;
 }
+
+.plan-label {
+  width: 100%;
+  max-width: 24ch;
+  overflow: hidden;
+}
+
+.plan-label > span {
+  display: block;
+  width: 111.111%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.045em;
+  transform: scaleX(0.9);
+  transform-origin: left center;
+}
