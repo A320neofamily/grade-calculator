@@ -1,7 +1,22 @@
 import { auth } from "./firebase"
+export { TEST_SCHOOL_KEY } from "./scoreSync"
 
 export const SCHOOL_CONFIG_API_URL =
   "https://grade-calculator-user-data.grade-calculator.workers.dev"
+
+export async function getTestSchool(): Promise<SchoolConfig> {
+  const response = await fetch(`${import.meta.env.BASE_URL}Testschool.json`)
+  if (!response.ok) throw new Error("테스트 평가계획을 불러오지 못했습니다.")
+  const config = parseSchoolConfig({
+    schoolCode: "testschool",
+    schoolName: "테스트중학교",
+    grade: 2,
+    semester: 2,
+    subjects: await response.json(),
+  })
+  if (!config) throw new Error("테스트 평가계획 형식이 올바르지 않습니다.")
+  return config
+}
 
 export type ConfigAssessment = {
   id: string

@@ -6,6 +6,10 @@ import { loadUserData, saveUserData, type UserData } from "./userDataApi"
 import VisitorStats from "./VisitorStats"
 import SchoolManager from "./SchoolManager"
 import MarkdownDialog from "./MarkdownDialog"
+import TestInvitationDialog, {
+  TEST_INVITATION_SEEN_KEY,
+} from "./TestInvitationDialog"
+import { cloudScoresOnly, mergeCloudScores, TEST_SCHOOL_ID } from "./scoreSync"
 import {
   oneTapShareUrl,
   schoolShortName,
@@ -13,9 +17,11 @@ import {
 } from "./schoolPresentation"
 import {
   getPublishedSchool,
+  getTestSchool,
   getSchoolKey,
   listPublishedSchools,
   parseSchoolConfig,
+  TEST_SCHOOL_KEY,
   type PublishedSchoolSummary,
   type SchoolConfig,
 } from "./schoolConfigApi"
@@ -3703,7 +3709,7 @@ function readStoredScores(storageKey: string): Scores {
 
 function compactUserData(data: UserData): UserData {
   return Object.fromEntries(
-    Object.entries(data).flatMap(([schoolId, scores]) => {
+    Object.entries(cloudScoresOnly(data)).flatMap(([schoolId, scores]) => {
       const enteredScores = Object.fromEntries(
         Object.entries(scores).filter(([, value]) => value !== ""),
       )
@@ -3879,11 +3885,18 @@ export default function App() {
     googleAccount: false,
     cloudSync: false,
   })
-  const [showNotice, setShowNotice] = useState(
+  const [noticeMode, setNoticeMode] = useState<"automatic" | "manual" | null>(
     () =>
       localStorage.getItem(`grade-calculator-notice-hidden:${appVersion}`) !==
-      "true",
+      "true"
+        ? "automatic"
+        : null,
   )
+  const showNotice = noticeMode !== null
+  const [showTestInvitation, setShowTestInvitation] = useState(
+    () => localStorage.getItem(TEST_INVITATION_SEEN_KEY) !== "true",
+  )
+  const [testInvitationError, setTestInvitationError] = useState("")
   const [user, setUser] = useState<User | null>(null)
   const isAdmin =
     Boolean(import.meta.env.VITE_MASTER_UID) &&
@@ -4038,18 +4051,8 @@ export default function App() {
         )
           return
 
-        // Cloud values win on conflicts; local-only values are retained and uploaded.
-        const localData = scoresRef.current
-        const schoolIds = new Set([
-          ...Object.keys(localData),
-          ...Object.keys(cloudData || {}),
-        ])
-        const mergedData = Object.fromEntries(
-          [...schoolIds].map((id) => [
-            id,
-            { ...(localData[id] || {}), ...(cloudData?.[id] || {}) },
-          ]),
-        ) as UserData
+        // Remote scores never overwrite the local-only test calculator.
+        const mergedData = mergeCloudScores(scoresRef.current, cloudData)
 
         scoresRef.current = mergedData
         syncUserIdRef.current = nextUser.uid
@@ -4234,7 +4237,10 @@ export default function App() {
     setOpeningSchoolKey(schoolKey)
     setSchoolSearchError("")
     try {
-      const config = await getPublishedSchool(schoolKey)
+      const config =
+        schoolKey === TEST_SCHOOL_KEY
+          ? await getTestSchool()
+          : await getPublishedSchool(schoolKey)
       if (config.schoolCode === "0000000" && !isAdmin && !allowRestricted) {
         setSchoolSearchError("이 평가계획은 허용된 계정에서만 열 수 있습니다.")
         return
@@ -4256,6 +4262,7 @@ export default function App() {
       )
       setActiveSchoolId(nextSchool.id)
       setShowSchoolManager(false)
+      return true
     } catch (error) {
       setSchoolSearchError(
         error instanceof Error
@@ -4270,13 +4277,17 @@ export default function App() {
   useEffect(() => {
     if (
       oneTapOpenedRef.current ||
-      schoolSearchStatus === "loading" ||
       !/\/onetap\/?$/.test(window.location.pathname)
     )
       return
     const params = new URLSearchParams(window.location.search)
     const schoolKey = (params.get("schooid") || params.get("schoolid"))?.trim()
-    if (!schoolKey || !/^\d+-[1-3]-[1-2]$/.test(schoolKey)) return
+    if (
+      !schoolKey ||
+      (schoolKey !== TEST_SCHOOL_KEY && !/^\d+-[1-3]-[1-2]$/.test(schoolKey)) ||
+      (schoolKey !== TEST_SCHOOL_KEY && schoolSearchStatus === "loading")
+    )
+      return
     oneTapOpenedRef.current = true
     void openPublishedSchool(schoolKey, true)
   }, [schoolSearchStatus])
@@ -4292,7 +4303,7 @@ export default function App() {
                 `grade-calculator-notice-hidden:${appVersion}`,
                 "true",
               )
-              setShowNotice(false)
+              setNoticeMode(null)
             }}
             type="button"
           >
@@ -4300,14 +4311,15 @@ export default function App() {
           </button>
           <button
             className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-indigo-700"
-            onClick={() => setShowNotice(false)}
+            onClick={() => setNoticeMode(null)}
             type="button"
           >
             확인
           </button>
         </div>
       }
-      onClose={() => setShowNotice(false)}
+      key={noticeMode}
+      onClose={() => setNoticeMode(null)}
       source={`${import.meta.env.BASE_URL}notice.md`}
       title="공지사항"
     />
@@ -4386,7 +4398,7 @@ export default function App() {
   const themeControl = (
     <button
       aria-label={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
-      className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:bg-slate-800 dark:hover:text-[#aab2cc]"
+      className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:bg-slate-800 dark:hover:text-[#aab2cc] sm:size-10"
       onClick={toggleTheme}
       title={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
       type="button"
@@ -4441,7 +4453,7 @@ export default function App() {
   const noticeControl = (
     <button
       className="rounded-lg px-3 py-2 text-sm font-bold text-slate-500 transition hover:bg-slate-100 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-      onClick={() => setShowNotice(true)}
+      onClick={() => setNoticeMode("manual")}
       type="button"
     >
       공지사항 열기
@@ -4683,6 +4695,28 @@ export default function App() {
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-100 px-5 py-12 text-slate-950 transition-colors dark:bg-slate-950 dark:text-white">
         {noticeDialog}
+        {showTestInvitation &&
+          !showNotice &&
+          !showPrivacyConsent &&
+          !showSchoolManager &&
+          (!openingSchoolKey || openingSchoolKey === TEST_SCHOOL_KEY) &&
+          !/\/onetap\/?$/.test(window.location.pathname) && (
+            <TestInvitationDialog
+              busy={openingSchoolKey === TEST_SCHOOL_KEY}
+              error={testInvitationError}
+              onClose={() => setShowTestInvitation(false)}
+              onTry={() => {
+                setTestInvitationError("")
+                void openPublishedSchool(TEST_SCHOOL_KEY).then((opened) => {
+                  if (opened) setShowTestInvitation(false)
+                  else
+                    setTestInvitationError(
+                      "테스트 평가계획을 불러오지 못했습니다. 다시 시도해 주세요.",
+                    )
+                })
+              }}
+            />
+          )}
         {privacyDialog}
         {schoolManager}
         <div className="absolute right-5 top-5 z-10 sm:right-8 sm:top-8">
@@ -4878,9 +4912,9 @@ export default function App() {
       {privacyDialog}
       {schoolManager}
       <header className="border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-4 sm:px-8">
+        <div className="calculator-header mx-auto flex max-w-7xl flex-nowrap items-center gap-2 px-3 py-4 sm:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <div className="hidden size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200 sm:flex">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200 sm:size-10">
               <Icon name="book" className="size-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -4893,12 +4927,12 @@ export default function App() {
                   {activeSchool.semester || 2} 평가계획
                 </span>
               </p>
-              <p className="text-lg font-extrabold tracking-tight">
+              <p className="truncate text-sm font-extrabold tracking-tight sm:text-lg">
                 원점수 계산기
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-1">
+          <div className="flex shrink-0 flex-nowrap items-center justify-end gap-0 sm:gap-1">
             {themeControl}
             <button
               className="flex min-h-10 min-w-9 items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white sm:px-3"
@@ -4907,7 +4941,7 @@ export default function App() {
               type="button"
             >
               <Icon name="share" className="size-4" />
-              <span className="hidden sm:inline">
+              <span className="hidden md:inline">
                 {shareStatus === "copied"
                   ? "링크 복사됨"
                   : shareStatus === "error"
@@ -4922,7 +4956,7 @@ export default function App() {
               type="button"
             >
               <Icon name="arrow" className="size-4 rotate-180" />
-              <span className="hidden sm:inline">학교 변경</span>
+              <span className="hidden md:inline">학교 변경</span>
             </button>
             <button
               aria-label="전체 초기화"
@@ -4932,13 +4966,19 @@ export default function App() {
               type="button"
             >
               <Icon name="trash" className="size-4" />
-              <span className="hidden sm:inline">전체 초기화</span>
+              <span className="hidden md:inline">전체 초기화</span>
             </button>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-10">
+        {activeSchool.id === TEST_SCHOOL_ID && (
+          <p className="mb-5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-xs font-semibold leading-5 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200">
+            테스트 열람 중 · 입력한 점수는 이 기기에만 저장되며 계정에
+            동기화되지 않습니다.
+          </p>
+        )}
         <section className="mb-8">
           <div className="mb-5">
             <p className="mb-1 text-sm font-bold text-indigo-600 dark:text-[#aab2cc]">
